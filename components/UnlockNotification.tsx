@@ -93,7 +93,7 @@ export default function UnlockNotification({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className='absolute inset-0 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 rounded-2xl blur-2xl opacity-50 animate-pulse'
+          className='absolute inset-0 bg-gradient-to-r from-purple-400/30 via-purple-500/30 to-purple-600/30 rounded-2xl blur-2xl animate-pulse'
         />
 
         {/* Main Card */}
@@ -170,7 +170,7 @@ export default function UnlockNotification({
                     repeat: Infinity,
                     repeatType: 'reverse',
                   }}
-                  className='absolute w-3 h-3 bg-gold-400 rounded-full'
+                  className='absolute w-3 h-3 bg-purple-400 rounded-full'
                   style={{
                     left: `${15 + i * 10}%`,
                     top: `${10 + (i % 2) * 30}px`,
@@ -185,7 +185,7 @@ export default function UnlockNotification({
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ delay: 1.2, duration: 1 }}
-            className='mb-4 h-2 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 rounded-full overflow-hidden'
+            className='mb-4 h-2 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 rounded-full overflow-hidden'
           >
             <motion.div
               initial={{ x: '-100%' }}
@@ -230,7 +230,7 @@ export default function UnlockNotification({
               repeat: Infinity,
               repeatDelay: 1.5,
             }}
-            className='absolute w-2 h-2 bg-gold-400 rounded-full'
+            className='absolute w-2 h-2 bg-purple-400 rounded-full'
             style={{
               left: '50%',
               top: '50%',
