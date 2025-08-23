@@ -20,6 +20,7 @@ import CompanionCard from '@/components/CompanionCard';
 import ItemCard from '@/components/ItemCard';
 import AddGoalModal from '@/components/AddGoalModal';
 import UnlockNotification from '@/components/UnlockNotification';
+import Hero3D from '@/components/Hero3D';
 import { Plus, Trophy, Users, Sword, Crown, Eye, EyeOff } from 'lucide-react';
 
 export default function Dashboard() {
@@ -196,8 +197,11 @@ export default function Dashboard() {
   const archivedCount = goals.filter((goal) => goal.archived).length;
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-700 p-4'>
-      <div className='max-w-7xl mx-auto'>
+    <div className='min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-700'>
+      {/* 3D Hero Section */}
+      <Hero3D />
+
+      <div className='max-w-7xl mx-auto p-4'>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

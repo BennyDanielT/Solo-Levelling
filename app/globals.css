@@ -77,3 +77,59 @@
     @apply bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 bg-clip-text text-transparent;
   }
 }
+
+/* 3D Hero Animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: perspective(1000px) rotateX(45deg) rotateY(45deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(1000px) rotateX(45deg) rotateY(45deg)
+      translateY(-20px);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: perspective(1000px) rotateX(45deg) rotateY(0deg)
+      translateY(-10px);
+  }
+  100% {
+    transform: perspective(1000px) rotateX(45deg) rotateY(360deg)
+      translateY(-10px);
+  }
+}
+
+@keyframes orbit {
+  0% {
+    transform: perspective(1000px) rotateX(75deg) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(1000px) rotateX(75deg) rotateY(360deg);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: perspective(1000px) rotateX(30deg) rotateZ(45deg) scale(1.2);
+  }
+  50% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(30deg) rotateZ(45deg) scale(1.4);
+  }
+}

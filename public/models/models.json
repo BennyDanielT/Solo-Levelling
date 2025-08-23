@@ -1,0 +1,56 @@
+{
+  "weapons": {
+    "sword": {
+      "path": "/models/weapons/sword.glb",
+      "name": "Fantasy Sword",
+      "description": "A powerful magical sword",
+      "scale": 1.5,
+      "position": [
+        0,
+        -1,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "characters": {
+    "warrior": {
+      "path": "/models/characters/warrior.glb",
+      "name": "Warrior",
+      "description": "A brave warrior companion",
+      "scale": 1,
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "props": {
+    "chest": {
+      "path": "/models/props/chest.glb",
+      "name": "Treasure Chest",
+      "description": "A mysterious treasure chest",
+      "scale": 1.2,
+      "position": [
+        0,
+        -0.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}
