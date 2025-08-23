@@ -42,6 +42,7 @@ export default function Dashboard() {
     name: string;
     description: string;
     imageUrl?: string;
+    modelPath?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export default function Dashboard() {
           name: companion.name,
           description: companion.description,
           imageUrl: companion.imageUrl,
+          modelPath: companion.modelPath, // Include 3D model path
         });
       } else if (newUnlocks.items.length > 0) {
         const item = newUnlocks.items[0];
@@ -154,6 +156,7 @@ export default function Dashboard() {
           name: item.name,
           description: item.description,
           imageUrl: item.imageUrl,
+          modelPath: item.modelPath, // Include 3D model path
         });
       }
     }

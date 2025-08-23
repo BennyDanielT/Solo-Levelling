@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, Users, Sword } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import UnlockImage from './UnlockModel3D';
 
 interface UnlockNotificationProps {
   notification: {
@@ -10,6 +11,7 @@ interface UnlockNotificationProps {
     name: string;
     description: string;
     imageUrl?: string;
+    modelPath?: string; // New: 3D model path
   };
   onClose: () => void;
 }
@@ -157,27 +159,49 @@ export default function UnlockNotification({
               {notification.description}
             </p>
 
-            {/* Sparkle Effects */}
-            <div className='relative mb-6'>
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    delay: 1 + i * 0.1,
-                    duration: 0.3,
-                    repeat: Infinity,
-                    repeatType: 'reverse',
-                  }}
-                  className='absolute w-3 h-3 bg-purple-400 rounded-full'
-                  style={{
-                    left: `${15 + i * 10}%`,
-                    top: `${10 + (i % 2) * 30}px`,
-                  }}
+            {/* 3D Model Display */}
+            {notification.modelPath ? (
+              <motion.div
+                initial={{ scale: 0, opacity: 0, rotateY: -180 }}
+                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                transition={{
+                  delay: 0.9,
+                  duration: 0.8,
+                  type: 'spring',
+                  stiffness: 100,
+                }}
+                className='flex justify-center mb-6'
+              >
+                <UnlockImage
+                  modelPath={notification.modelPath}
+                  type={notification.type}
+                  scale={1.0}
+                  autoRotate={true}
                 />
-              ))}
-            </div>
+              </motion.div>
+            ) : (
+              /* Fallback Sparkle Effects if no 3D model */
+              <div className='relative mb-6'>
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{
+                      delay: 1 + i * 0.1,
+                      duration: 0.3,
+                      repeat: Infinity,
+                      repeatType: 'reverse',
+                    }}
+                    className='absolute w-3 h-3 bg-purple-400 rounded-full'
+                    style={{
+                      left: `${15 + i * 10}%`,
+                      top: `${10 + (i % 2) * 30}px`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* Progress Bar Animation */}

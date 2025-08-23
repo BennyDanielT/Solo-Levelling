@@ -12,11 +12,11 @@ interface LocalModel3DProps {
 }
 
 export default function LocalModel3D({
-  modelPath = "/models/characters/warrior.glb",
-  title = "3D Character",
-  scale = 1,
+  modelPath = '/models/characters/warrior.glb',
+  title = '3D Character',
+  scale = 1.0,
   showFallback = true,
-  enableAnimation = true
+  enableAnimation = true,
 }: LocalModel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,75 +29,106 @@ export default function LocalModel3D({
     let renderer: any;
     let model: any;
     let animationFrame: number;
+    let controls: any;
 
     const loadThreeJS = async () => {
       try {
         console.log('🎯 Loading Three.js modules...');
-        
-        // Dynamic imports to avoid SSR issues
+
+        // Import Three.js modules
         const THREE = await import('three');
-        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
-        const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
+        const { GLTFLoader } = await import(
+          'three/examples/jsm/loaders/GLTFLoader.js'
+        );
+        const { OrbitControls } = await import(
+          'three/examples/jsm/controls/OrbitControls.js'
+        );
 
         console.log('✅ Three.js modules loaded successfully');
-        
+
         if (!containerRef.current) return;
 
         // Scene setup
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a0a);
+        scene.background = new THREE.Color(0x1a1a2e); // Lighter dark blue background
 
         // Camera setup
         camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        camera.position.set(0, 1, 3);
+        camera.position.set(0, 2, 4); // Better camera position
 
         // Renderer setup
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+        renderer.setSize(
+          containerRef.current.clientWidth,
+          containerRef.current.clientHeight,
+        );
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputEncoding = THREE.sRGBEncoding;
         containerRef.current.appendChild(renderer.domElement);
 
         // Controls
-        const controls = new OrbitControls(camera, renderer.domElement);
+        controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.maxDistance = 10;
         controls.minDistance = 1;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        // Enhanced Lighting Setup for Better Visibility
+
+        // Bright ambient light for overall illumination
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 5, 5);
+        // Main directional light (like sunlight)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.1;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -10;
+        directionalLight.shadow.camera.right = 10;
+        directionalLight.shadow.camera.top = 10;
+        directionalLight.shadow.camera.bottom = -10;
         scene.add(directionalLight);
 
-        // Blue magic light (Solo Leveling style)
-        const blueLight = new THREE.PointLight(0x4080ff, 0.8, 10);
-        blueLight.position.set(-2, 2, 2);
+        // Secondary directional light from opposite side
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight2.position.set(-5, 5, -5);
+        scene.add(directionalLight2);
+
+        // Fill light from front
+        const frontLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        frontLight.position.set(0, 0, 10);
+        scene.add(frontLight);
+
+        // Blue magic light (Solo Leveling style) - brighter
+        const blueLight = new THREE.PointLight(0x4080ff, 1.5, 15);
+        blueLight.position.set(-3, 3, 3);
         scene.add(blueLight);
 
-        // Golden light
-        const goldLight = new THREE.PointLight(0xffd700, 0.6, 8);
-        goldLight.position.set(2, 1, -2);
+        // Golden light - brighter
+        const goldLight = new THREE.PointLight(0xffd700, 1.2, 12);
+        goldLight.position.set(3, 2, -3);
         scene.add(goldLight);
+
+        // Additional rim lighting
+        const rimLight = new THREE.DirectionalLight(0x8080ff, 0.8);
+        rimLight.position.set(-10, 5, 0);
+        scene.add(rimLight);
 
         // Load model
         const loader = new GLTFLoader();
         console.log(`🎭 Loading model: ${modelPath}`);
-        
+
         loader.load(
           modelPath,
           (gltf) => {
             console.log('✅ Model loaded successfully');
             model = gltf.scene;
             model.scale.setScalar(scale);
-            
+
             // Enable shadows
             model.traverse((child: any) => {
               if (child.isMesh) {
@@ -124,15 +155,15 @@ export default function LocalModel3D({
             console.error('❌ Model loading failed:', error);
             setHasError(true);
             setIsLoading(false);
-          }
+          },
         );
 
         // Animation loop
         const animate = () => {
           animationFrame = requestAnimationFrame(animate);
-          
-          controls.update();
-          
+
+          if (controls) controls.update();
+
           // Rotate model slowly
           if (model && enableAnimation) {
             model.rotation.y += 0.005;
@@ -140,10 +171,12 @@ export default function LocalModel3D({
 
           // Animate lights for magical effect
           const time = Date.now() * 0.001;
-          blueLight.intensity = 0.8 + Math.sin(time * 2) * 0.3;
-          goldLight.intensity = 0.6 + Math.cos(time * 1.5) * 0.2;
+          if (blueLight) blueLight.intensity = 0.8 + Math.sin(time * 2) * 0.3;
+          if (goldLight) goldLight.intensity = 0.6 + Math.cos(time * 1.5) * 0.2;
 
-          renderer.render(scene, camera);
+          if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+          }
         };
 
         animate();
@@ -151,9 +184,14 @@ export default function LocalModel3D({
         // Handle resize
         const handleResize = () => {
           if (!containerRef.current) return;
-          camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+          camera.aspect =
+            containerRef.current.clientWidth /
+            containerRef.current.clientHeight;
           camera.updateProjectionMatrix();
-          renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+          renderer.setSize(
+            containerRef.current.clientWidth,
+            containerRef.current.clientHeight,
+          );
         };
 
         window.addEventListener('resize', handleResize);
@@ -161,7 +199,6 @@ export default function LocalModel3D({
         return () => {
           window.removeEventListener('resize', handleResize);
         };
-
       } catch (error) {
         console.error('❌ Three.js loading failed:', error);
         setHasError(true);
@@ -177,8 +214,12 @@ export default function LocalModel3D({
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
       }
-      if (renderer && containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (renderer && containerRef.current && renderer.domElement) {
+        try {
+          containerRef.current.removeChild(renderer.domElement);
+        } catch (e) {
+          // Element might already be removed
+        }
         renderer.dispose();
       }
     };
@@ -187,11 +228,11 @@ export default function LocalModel3D({
   // Show fallback if error and fallback enabled
   if (hasError && showFallback) {
     return (
-      <div className="w-full h-[60vh] relative">
+      <div className='w-full h-[60vh] relative'>
         <CSS3DCharacter />
-        <div className="absolute top-4 right-4 bg-red-500/20 border border-red-500 rounded-lg p-2">
-          <p className="text-red-300 text-xs">3D model failed to load</p>
-          <p className="text-red-400 text-xs">Using CSS 3D fallback</p>
+        <div className='absolute top-4 right-4 bg-red-500/20 border border-red-500 rounded-lg p-2'>
+          <p className='text-red-300 text-xs'>3D model failed to load</p>
+          <p className='text-red-400 text-xs'>Using CSS 3D fallback</p>
         </div>
       </div>
     );
@@ -200,58 +241,64 @@ export default function LocalModel3D({
   // Show error message if no fallback
   if (hasError && !showFallback) {
     return (
-      <div className="w-full h-[60vh] bg-gradient-to-b from-gray-900 via-red-900 to-purple-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center">
-            <span className="text-3xl">❌</span>
+      <div className='w-full h-[60vh] bg-gradient-to-b from-gray-900 via-red-900 to-purple-900 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center'>
+            <span className='text-3xl'>❌</span>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Model Failed to Load</h2>
-          <p className="text-red-300">Check if {modelPath} exists</p>
+          <h2 className='text-2xl font-bold text-white mb-2'>
+            Model Failed to Load
+          </h2>
+          <p className='text-red-300'>Check if {modelPath} exists</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[60vh] relative">
+    <div className='w-full h-[60vh] relative'>
       {/* Loading State */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center z-10">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Loading 3D Character...</h2>
-            <p className="text-gray-300">Initializing Three.js scene</p>
+        <div className='absolute inset-0 bg-gradient-to-b from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center z-10'>
+          <div className='text-center'>
+            <div className='w-16 h-16 mx-auto mb-4 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin'></div>
+            <h2 className='text-2xl font-bold text-white mb-2'>
+              Loading 3D Character...
+            </h2>
+            <p className='text-gray-300'>Initializing Three.js scene</p>
           </div>
         </div>
       )}
 
       {/* Three.js Container */}
-      <div 
-        ref={containerRef} 
-        className="w-full h-full"
+      <div
+        ref={containerRef}
+        className='w-full h-full'
         style={{ cursor: 'grab' }}
-        onMouseDown={(e) => e.currentTarget.style.cursor = 'grabbing'}
-        onMouseUp={(e) => e.currentTarget.style.cursor = 'grab'}
+        onMouseDown={(e) => (e.currentTarget.style.cursor = 'grabbing')}
+        onMouseUp={(e) => (e.currentTarget.style.cursor = 'grab')}
       />
 
       {/* Character Info Overlay */}
-      <div className="absolute bottom-4 left-4 right-4 z-20">
-        <div className="glass-effect rounded-lg p-4 text-center">
-          <h3 className="text-xl font-bold text-white mb-2">
-            🗡️ {title}
-          </h3>
-          <p className="text-sm text-gray-300">
+      <div className='absolute bottom-4 left-4 right-4 z-20'>
+        <div className='glass-effect rounded-lg p-4 text-center'>
+          <h3 className='text-xl font-bold text-white mb-2'>🗡️ {title}</h3>
+          <p className='text-sm text-gray-300'>
             Interactive 3D Character • Drag to rotate
           </p>
-          <div className="mt-2 flex justify-center space-x-4 text-xs text-gray-400">
+          <div className='mt-2 flex justify-center space-x-4 text-xs text-gray-400'>
             <span>Powered by Three.js</span>
             <span>•</span>
             <span>
-              {isLoading ? 'Loading...' : threeLoaded ? 'Model loaded' : 'Ready'}
+              {isLoading
+                ? 'Loading...'
+                : threeLoaded
+                ? 'Model loaded'
+                : 'Ready'}
             </span>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

@@ -27,6 +27,7 @@ export interface Companion {
   name: string;
   description: string;
   imageUrl: string;
+  modelPath?: string; // Path to 3D model for unlock notifications
   requiredPoints: number;
   unlocked: boolean;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
@@ -38,6 +39,7 @@ export interface Item {
   name: string;
   description: string;
   imageUrl: string;
+  modelPath?: string; // Path to 3D model for unlock notifications
   requiredPoints: number;
   unlocked: boolean;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
