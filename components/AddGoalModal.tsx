@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Goal } from '@/types';
+import { calculateAvailableWeight } from '@/utils/progress';
 import { X, Target, Info } from 'lucide-react';
 
 interface AddGoalModalProps {
@@ -33,13 +34,8 @@ export default function AddGoalModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Calculate available weight based on incomplete goals only
-      const incompleteGoals = existingGoals.filter((goal) => !goal.completed);
-      const totalIncompleteWeight = incompleteGoals.reduce(
-        (sum, goal) => sum + goal.weight,
-        0,
-      );
-      const available = Math.max(0, 100 - totalIncompleteWeight);
+      // Calculate available weight using the helper function
+      const available = calculateAvailableWeight(existingGoals);
 
       setAvailableWeight(available);
       setWeight(Math.min(20, Math.max(0, available)));

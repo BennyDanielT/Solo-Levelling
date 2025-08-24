@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor AI Rules
+
+## Development Server
+
+- NEVER run `npm run dev`, `yarn dev`, or any development server commands automatically
+- Only run dev server if explicitly requested by the user
+- Assume the user will manually start/restart their dev server when needed
+
+## General Commands
+
+- Don't run commands automatically after making code changes
+- Only run commands when specifically asked by the user
+- Focus on making code changes and explaining what was done
+
+## Testing
+
+- Don't automatically run tests unless explicitly requested
+- Don't run build commands unless explicitly requested
+

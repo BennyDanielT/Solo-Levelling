@@ -152,7 +152,7 @@ export default function UnlockImage({
 
       {/* Rotating magical circle behind image */}
       <div
-        className='absolute inset-4 border border-yellow-400/30 rounded-full'
+        className='absolute inset-4 rounded-full'
         style={{
           animation: autoRotate ? 'rotate 8s linear infinite' : 'none',
           background:
@@ -162,9 +162,11 @@ export default function UnlockImage({
 
       {/* Inner magical circle */}
       <div
-        className='absolute inset-8 border border-yellow-400/20 rounded-full'
+        className='absolute inset-8 rounded-full'
         style={{
           animation: autoRotate ? 'rotate 12s linear infinite reverse' : 'none',
+          background:
+            'radial-gradient(circle, transparent 80%, rgba(255, 215, 0, 0.05) 100%)',
         }}
       />
 

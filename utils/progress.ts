@@ -65,30 +65,17 @@ export function redistributeWeights(goals: Goal[], newGoalWeight: number): Goal[
 }
 
 export function redistributeWeightsAfterCompletion(goals: Goal[]): Goal[] {
-  // Get completed and incomplete goals (excluding archived)
-  const completedGoals = goals.filter(goal => goal.completed && !goal.archived);
-  const incompleteGoals = goals.filter(goal => !goal.completed && !goal.archived);
-  
-  if (incompleteGoals.length === 0) {
-    // All active goals are completed, no redistribution needed
-    return goals;
-  }
-
-  // Calculate total weight from completed goals
-  const completedWeight = completedGoals.reduce((sum, goal) => sum + goal.weight, 0);
-  
-  // Redistribute the completed weight among incomplete goals
-  const weightPerIncompleteGoal = completedWeight / incompleteGoals.length;
+  // When a goal is completed, we want to release its weight back to the available pool
+  // This means we don't redistribute it to other goals - it becomes available for new goals
   
   return goals.map(goal => {
-    if (goal.completed || goal.archived) {
-      return goal; // Keep completed and archived goals unchanged
-    } else {
+    if (goal.completed && !goal.archived) {
       return {
         ...goal,
-        weight: goal.weight + weightPerIncompleteGoal
+        weight: 0 // Release the weight back to available pool
       };
     }
+    return goal; // Keep all other goals unchanged
   });
 }
 
@@ -118,6 +105,29 @@ export function redistributeWeightsAfterDeletion(goals: Goal[], deletedGoal: Goa
       };
     }
   });
+}
+
+export function redistributeWeightsAfterArchiving(goals: Goal[], archivedGoal: Goal): Goal[] {
+  // When we archive a goal, we want to release its weight back to the available pool
+  // This means we don't redistribute it to other goals - it becomes available for new goals
+  
+  return goals.map(goal => {
+    if (goal.id === archivedGoal.id) {
+      return {
+        ...goal,
+        archived: true,
+        weight: 0 // Release the weight back to available pool
+      };
+    }
+    return goal; // Keep all other goals unchanged
+  });
+}
+
+export function calculateAvailableWeight(goals: Goal[]): number {
+  // Calculate available weight by subtracting weight of active (incomplete + non-archived) goals
+  const activeGoals = goals.filter(goal => !goal.completed && !goal.archived);
+  const totalActiveWeight = activeGoals.reduce((sum, goal) => sum + goal.weight, 0);
+  return Math.max(0, 100 - totalActiveWeight);
 }
 
 export function getUnlockedCompanions(totalPoints: number, companions: Companion[]): Companion[] {

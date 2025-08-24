@@ -8,6 +8,7 @@ import {
   redistributeWeights,
   redistributeWeightsAfterCompletion,
   redistributeWeightsAfterDeletion,
+  redistributeWeightsAfterArchiving,
   getUnlockedCompanions,
   getUnlockedItems,
   checkForNewUnlocks,
@@ -178,18 +179,16 @@ export default function Dashboard() {
   };
 
   const handleArchiveGoal = (goalId: string) => {
-    // Archive the goal (preserves progress)
-    setGoals(
-      goals.map((goal) => {
-        if (goal.id === goalId) {
-          return {
-            ...goal,
-            archived: true,
-          };
-        }
-        return goal;
-      }),
+    // Find the goal to archive
+    const goalToArchive = goals.find((goal) => goal.id === goalId);
+    if (!goalToArchive) return;
+
+    // Archive the goal and release its weight back to the available pool
+    const updatedGoals = redistributeWeightsAfterArchiving(
+      goals,
+      goalToArchive,
     );
+    setGoals(updatedGoals);
   };
 
   // Filter goals based on showArchived state
