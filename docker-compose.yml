@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:7.0
+    container_name: solo-leveling-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: solo-leveling-2024
+      MONGO_INITDB_DATABASE: solo-leveling-db
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - solo-leveling-network
+    command: ['--replSet', 'rs0', '--bind_ip_all']
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # MongoDB Replica Set Initializer
+  mongo-init:
+    image: mongo:7.0
+    container_name: solo-leveling-mongo-init
+    depends_on:
+      - mongodb
+    networks:
+      - solo-leveling-network
+    volumes:
+      - ./scripts/mongo-replica-init.js:/mongo-replica-init.js:ro
+    command: >
+      sh -c "
+        echo '⏳ Waiting for MongoDB to start...' &&
+        sleep 10 &&
+        mongosh --host mongodb:27017 --file /mongo-replica-init.js
+      "
+    restart: 'no'
+
+  # Next.js Application (for development)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: solo-leveling-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb://admin:solo-leveling-2024@mongodb:27017/solo-leveling-db?authSource=admin
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - solo-leveling-network
+    command: sh -c "chmod +x ./scripts/start-dev.sh && sh ./scripts/start-dev.sh"
+
+  # MongoDB Express (Web UI for database management)
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: solo-leveling-mongo-ui
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: solo-leveling-2024
+      ME_CONFIG_MONGODB_URL: mongodb://admin:solo-leveling-2024@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - solo-leveling-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  solo-leveling-network:
+    driver: bridge
