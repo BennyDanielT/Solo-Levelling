@@ -9,15 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@azure/ai-agents": "^1.1.0",
+    "@azure/ai-projects": "^1.0.1",
+    "@azure/identity": "^4.13.0",
+    "@azure/openai": "^2.0.0",
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "@prisma/client": "^7.0.0",
     "@types/three": "^0.169.0",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.0.0",
     "framer-motion": "^10.16.16",
     "lucide-react": "^0.294.0",
     "next": "14.0.4",
+    "next-auth": "^4.24.13",
+    "openai": "^6.9.1",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.2.0",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -27,6 +37,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
     "postcss": "^8",
+    "prisma": "^7.0.0",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
   }

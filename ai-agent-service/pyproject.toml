@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ai-agent-service"
+version = "0.1.0"
+description = ""
+authors = ["BennyDanielT <benny28dany@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.121.3"
+uvicorn = "^0.38.0"
+azure-ai-agents = "^1.1.0"
+azure-identity = "^1.25.1"
+python-dotenv = "^1.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

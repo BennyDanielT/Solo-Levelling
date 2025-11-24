@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import ClientProviders from '@/components/ClientProviders';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,10 +21,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
-        <div className='min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-700'>
-          {children}
-        </div>
+      <body className='min-h-screen bg-dark-900 text-white'>
+        {/* Client providers + Navigation */}
+        <ClientProviders>
+          <main>{children}</main>
+        </ClientProviders>
       </body>
     </html>
   );
