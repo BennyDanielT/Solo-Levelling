@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 import { prisma } from '@/lib/prisma'
 
 // Validation schema
@@ -94,25 +94,26 @@ export async function POST(request: NextRequest) {
       data: { user }
     }, { status: 201 })
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+  } catch (error: any) {
+    console.error('Registration error', error)
+
+    // Zod validation errors expose `issues` and a `flatten()` helper.
+    if (error instanceof ZodError) {
+      const flattened = error.flatten()
       return NextResponse.json(
         {
           success: false,
           error: 'Validation failed',
-          data: error.errors
+          issues: error.issues,
+          fieldErrors: flattened.fieldErrors,
         },
         { status: 400 }
       )
     }
 
-    console.error('Registration error:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error'
-      },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }
-} 
+}

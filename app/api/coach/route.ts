@@ -1,116 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { DefaultAzureCredential } from '@azure/identity';
-import { AIProjectClient } from '@azure/ai-projects';
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+interface RequestBody {
+  message?: string;
+}
+
+interface ChatResponse {
+  responseText: string;
+  threadId: string;
+  runId: string;
+}
+
+const FASTAPI_SERVICE_URL =
+  process.env.FASTAPI_SERVICE_URL || "http://localhost:8000";
+
+export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
+    // Parse the user message from the request body
+    const body = (await request.json()) as RequestBody;
+    const userMessage = body.message;
 
-    const { message, conversationId } = await request.json();
+    console.log("[Coach API] Received message:", userMessage);
+    console.log("[Coach API] FastAPI URL:", FASTAPI_SERVICE_URL);
 
-    if (!message || typeof message !== 'string') {
+    if (!userMessage) {
       return NextResponse.json(
-        { success: false, error: 'Message is required' },
+        { error: "Missing 'message' in request body" },
         { status: 400 }
       );
     }
 
-    // Match JavaScript example exactly
-    const projectEndpoint = process.env.AZURE_AI_PROJECT_ENDPOINT;
-    const agentName = process.env.AZURE_AI_AGENT_NAME || 'life-hack-coach';
+    // Call FastAPI service
+    console.log("[Coach API] Calling FastAPI...");
+    const response = await fetch(`${FASTAPI_SERVICE_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage }),
+    });
 
-    if (!projectEndpoint) {
+    console.log("[Coach API] FastAPI response status:", response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("[Coach API] FastAPI error:", errorData);
       return NextResponse.json(
-        { success: false, error: 'AZURE_AI_PROJECT_ENDPOINT missing' },
-        { status: 500 }
+        { error: errorData.detail || "FastAPI service error" },
+        { status: response.status }
       );
     }
 
-    // Create AI Project client (matching JavaScript example exactly)
-    const projectClient = new AIProjectClient(
-      projectEndpoint,
-      new DefaultAzureCredential()
-    );
-
-    // Retrieve Agent by name (latest version) - matching user's example
-    let retrievedAgent;
-    try {
-      // Try getting agent by name as ID
-      retrievedAgent = await projectClient.agents.getAgent(agentName);
-    } catch {
-      // If not found, list agents and find by name
-      const agentsIterator = projectClient.agents.listAgents();
-      for await (const agent of agentsIterator) {
-        if (agent.name === agentName) {
-          retrievedAgent = agent;
-          break;
-        }
-      }
-      if (!retrievedAgent) {
-        throw new Error(`Agent ${agentName} not found`);
-      }
-    }
-
-    // Get OpenAI client - matching user's example
-    const openAIClient = await projectClient.getAzureOpenAIClient();
-
-    let conversation;
-    
-    // Use existing conversation or create new one - matching user's example structure
-    if (conversationId) {
-      // For existing conversation, we'll add the message
-      // Note: The exact API may vary, this matches the pattern from the example
-      conversation = { id: conversationId };
-      await (openAIClient as any).conversations.createItem(conversationId, {
-        type: 'message',
-        role: 'user',
-        content: message
-      });
-    } else {
-      // Create new conversation with initial user message - matching user's example
-      conversation = await (openAIClient as any).conversations.create({
-        items: [
-          { type: 'message', role: 'user', content: message }
-        ]
-      });
-    }
-
-    // Generate response using the agent - matching user's example exactly
-    const response = await (openAIClient as any).responses.create(
-      {
-        conversation: conversation.id,
-      },
-      {
-        body: {
-          agent: {
-            name: retrievedAgent.name || agentName,
-            type: 'agent_reference'
-          }
-        },
-      }
-    );
+    const data = (await response.json()) as ChatResponse;
+    console.log("[Coach API] Success:", data);
 
     return NextResponse.json({
-      success: true,
-      message: response.output_text,
-      conversationId: conversation.id,
+      responseText: data.responseText,
+      threadId: data.threadId,
+      runId: data.runId,
     });
-
   } catch (error) {
-    console.error('Coach API error:', error);
+    console.error("[Coach API] Error:", error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      {
+        error: "Failed to generate response from Azure AI Agent.",
+        details: (error as Error).message,
+      },
       { status: 500 }
     );
   }
 }
-

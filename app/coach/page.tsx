@@ -3,14 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, MessageSquare, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import Navigation from '@/components/Navigation';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  threadId?: string;
+  runId?: string;
 }
 
 export default function CoachPage() {
@@ -18,7 +19,8 @@ export default function CoachPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello! I'm your self-improvement coach. I'm here to help you reflect on your progress, celebrate your wins, identify areas for growth, and guide you toward becoming the best version of yourself. What would you like to discuss today?",
+      content:
+        "Hello! I'm your productivity coach powered by Azure AI. I'm here to help you improve your productivity, time management, and personal growth. What would you like to discuss today?",
       timestamp: new Date(),
     },
   ]);
@@ -40,6 +42,8 @@ export default function CoachPage() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    console.log('[CoachPage] Sending message:', input);
+
     const userMessage: Message = {
       role: 'user',
       content: input.trim(),
@@ -51,13 +55,7 @@ export default function CoachPage() {
     setIsLoading(true);
 
     try {
-      const conversationHistory = messages
-        .slice(1)
-        .map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        }));
-
+      console.log('[CoachPage] Calling /api/coach');
       const response = await fetch('/api/coach', {
         method: 'POST',
         headers: {
@@ -65,27 +63,35 @@ export default function CoachPage() {
         },
         body: JSON.stringify({
           message: userMessage.content,
-          conversationHistory,
         }),
       });
 
-      const data = await response.json();
+      console.log('[CoachPage] Response status:', response.status);
 
-      if (data.success) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.message,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        throw new Error(data.error || 'Failed to get response');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[CoachPage] API error:', errorData);
+        throw new Error(errorData.error || 'Failed to get response');
       }
+
+      const data = await response.json();
+      console.log('[CoachPage] API Success:', data);
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data.responseText,
+        timestamp: new Date(),
+        threadId: data.threadId,
+        runId: data.runId,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('[CoachPage] Error sending message:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: `Sorry, I encountered an error: ${
+          (error as Error).message
+        }. Please try again.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -130,11 +136,12 @@ export default function CoachPage() {
             <div className='flex items-center gap-3 mb-2'>
               <Sparkles className='text-gold-400 w-8 h-8' />
               <h1 className='text-4xl font-bold gradient-text'>
-                Self-Improvement Coach
+                Productivity Coach
               </h1>
             </div>
             <p className='text-gray-300 text-lg'>
-              Get personalized feedback, tips, and guidance on your journey
+              Get AI-powered guidance on productivity, time management, and
+              personal growth
             </p>
           </motion.div>
 
@@ -189,7 +196,7 @@ export default function CoachPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder='Ask for feedback, tips, or guidance...'
+                placeholder='Ask for productivity tips, guidance, or feedback...'
                 className='flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 resize-none'
                 rows={2}
                 disabled={isLoading}
@@ -214,4 +221,3 @@ export default function CoachPage() {
     </div>
   );
 }
-

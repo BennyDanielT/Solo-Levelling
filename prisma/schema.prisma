@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
+  // url removed for Prisma v7+; supply connection info via prisma.config.ts or PrismaClient constructor
 }
 
 // NextAuth.js required collections (MongoDB)

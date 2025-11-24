@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CSS3DCharacter from './CSS3DCharacter';
 
 interface SketchfabHero3DProps {
@@ -25,6 +25,7 @@ export default function SketchfabHero3D({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [showIframe, setShowIframe] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     // Only show iframe on client side to avoid SSR issues
@@ -33,6 +34,13 @@ export default function SketchfabHero3D({
     }, 500);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      iframeRef.current.setAttribute('mozallowfullscreen', 'true');
+      iframeRef.current.setAttribute('webkitallowfullscreen', 'true');
+    }
   }, []);
 
   const handleLoad = () => {
@@ -110,21 +118,12 @@ export default function SketchfabHero3D({
       {/* Sketchfab Iframe */}
       {showIframe && !hasError && (
         <iframe
+          ref={iframeRef}
           title={title}
           frameBorder='0'
           allowFullScreen
-          mozallowfullscreen='true'
-          webkitallowfullscreen='true'
-          allow='autoplay; fullscreen; xr-spatial-tracking'
-          xr-spatial-tracking='true'
-          execution-while-out-of-viewport='true'
-          execution-while-not-rendered='true'
-          web-share='true'
-          width={width}
-          height={height}
+          allow='autoplay; fullscreen; xr-spatial-tracking; execution-while-out-of-viewport'
           src={embedUrl}
-          onLoad={handleLoad}
-          onError={handleError}
           className='w-full h-full'
         />
       )}

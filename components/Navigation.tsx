@@ -1,84 +1,50 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
-import { motion } from 'framer-motion';
-import { LogOut, User, Crown, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React from 'react';
 
 export default function Navigation() {
-  const { data: session, status } = useSession();
+  const path = usePathname();
 
-  if (status === 'loading') {
-    return null; // Don't show navigation while loading
-  }
-
-  if (!session) {
-    return null; // Don't show navigation for unauthenticated users
-  }
-
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/' });
-  };
+  const linkClass = (href: string) =>
+    `px-3 py-2 rounded-md text-sm font-medium ${
+      path === href
+        ? 'bg-white/10 text-white'
+        : 'text-gray-300 hover:bg-white/5'
+    }`;
 
   return (
-    <motion.nav
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className='fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10'
-    >
-      <div className='max-w-7xl mx-auto px-4 py-3'>
-        <div className='flex items-center justify-between'>
-          {/* Logo/Title */}
-          <div className='flex items-center gap-6'>
-            <Link
-              href='/'
-              className='flex items-center gap-2 text-white hover:text-gold-400 transition-colors'
-            >
-              <Crown className='w-8 h-8 text-gold-400' />
-              <span className='text-xl font-bold'>Solo Leveling</span>
+    <nav className='w-full bg-dark-900/80 backdrop-blur sticky top-0 z-40 border-b border-white/5'>
+      <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <div className='flex h-14 items-center justify-between'>
+          <div className='flex items-center gap-4'>
+            <Link href='/' className='text-lg font-semibold text-white'>
+              Solo-Levelling
             </Link>
-            <Link
-              href='/coach'
-              className='flex items-center gap-2 text-gray-300 hover:text-gold-400 transition-colors'
-            >
-              <MessageSquare className='w-5 h-5' />
-              <span className='text-sm font-medium'>Coach</span>
-            </Link>
+            <div className='ml-4 flex items-center space-x-1'>
+              <Link href='/' className={linkClass('/')}>
+                Home
+              </Link>
+              <Link href='/coach' className={linkClass('/coach')}>
+                LLM Chat
+              </Link>
+              <Link href='/goals' className={linkClass('/goals')}>
+                Goals
+              </Link>
+            </div>
           </div>
 
-          {/* User Menu */}
-          <div className='flex items-center gap-4'>
-            {/* User Info */}
-            <div className='flex items-center gap-2 text-white'>
-              <div className='w-8 h-8 rounded-full bg-gradient-to-r from-gold-500 to-gold-600 flex items-center justify-center'>
-                {session.user?.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || 'User'}
-                    className='w-8 h-8 rounded-full'
-                  />
-                ) : (
-                  <User className='w-4 h-4 text-white' />
-                )}
-              </div>
-              <span className='hidden sm:block text-sm font-medium'>
-                {session.user?.name || 'Hunter'}
-              </span>
-            </div>
-
-            {/* Sign Out Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className='flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 hover:text-red-200 transition-all duration-200'
+          <div className='flex items-center space-x-3'>
+            <Link
+              href='/api/auth/signin'
+              className='px-3 py-1 text-sm rounded-md bg-white/5 text-gray-200 hover:bg-white/10'
             >
-              <LogOut className='w-4 h-4' />
-              <span className='hidden sm:block text-sm'>Sign Out</span>
-            </motion.button>
+              Sign in
+            </Link>
           </div>
         </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 }

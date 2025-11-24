@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 
 const goalSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -95,18 +95,21 @@ export async function POST(request: NextRequest) {
       data: goal
     }, { status: 201 })
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, error: 'Validation failed', data: error.errors },
-        { status: 400 }
-      )
+  } catch (error: any) {
+      if (error instanceof ZodError) {
+        const flattened = error.flatten();
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Validation failed',
+            issues: error.issues,
+            fieldErrors: flattened.fieldErrors,
+          },
+          { status: 400 }
+        );
+      }
+  
+      console.error('Create goal error', error);
+      return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
-
-    console.error('Create goal error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-} 
+}
