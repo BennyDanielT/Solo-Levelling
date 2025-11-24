@@ -1,4 +1,4 @@
-import { colors } from './colors';
+import { tailwindColors as colors}  from './colors';
 
 /**
  * Theme Configuration
@@ -10,15 +10,15 @@ export const themeConfig = {
 
   // Semantic color tokens for common use cases
   semantic: {
-    primary: colors.primary[500],
-    secondary: colors.secondary[500],
-    success: colors.success[500],
-    warning: colors.warning[500],
-    error: colors.error[500],
-    background: colors.dark[900],
-    surface: colors.dark[800],
-    text: colors.light[50],
-    textSecondary: colors.dark[400],
+    primary: colors.deep_sky_blue[500],
+    secondary: colors.bright_gold[500],
+    success: colors.slime_lime[500],
+    warning: colors.vivid_tangerine[500],
+    error: colors.strawberry_red[500],
+    background: colors.blue_slate[900],
+    surface: colors.blue_slate[800],
+    text: '#ffffff',
+    textSecondary: colors.blue_slate[400],
   },
 
   // Spacing scale

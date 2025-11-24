@@ -17,7 +17,8 @@ export default function GoalCard({
   onDelete,
   onArchive,
 }: GoalCardProps) {
-  const isCompleted = goal.completed;
+  const isCompleted = goal.status === 'completed';
+  const isArchived = goal.status === 'archived';
 
   return (
     <motion.div
@@ -68,10 +69,8 @@ export default function GoalCard({
             <div className='flex items-center gap-4 text-sm'>
               <div className='flex items-center gap-1'>
                 <div className='w-3 h-3 rounded-full bg-blue-500'></div>
-                <span className='text-gray-400'>Weight:</span>
-                <span className='text-white font-medium'>
-                  {goal.weight.toFixed(1)}%
-                </span>
+                <span className='text-gray-400'>Progress:</span>
+                <span className='text-white font-medium'>{goal.progress}%</span>
               </div>
 
               <div className='flex items-center gap-1'>
