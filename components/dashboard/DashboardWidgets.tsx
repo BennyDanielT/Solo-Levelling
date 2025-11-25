@@ -42,17 +42,25 @@ const weeklyStatsData = [
   { name: 'Week 4', goals: 20, achievements: 16 },
 ];
 
+const chartVariants: Record<string, string> = {
+  aurora: 'bg-gradient-to-br from-[#3f2b96] via-[#251E61] to-[#000] text-white',
+  citrus:
+    'bg-gradient-to-br from-[#ffb347] via-[#ffcc33] to-[#e96443] text-gray-900',
+  mint: 'bg-gradient-to-br from-[#11998e] via-[#38ef7d] to-[#0f2027] text-white',
+};
+
 interface ChartCardProps {
   title: string;
+  variant?: keyof typeof chartVariants;
   children: React.ReactNode;
 }
 
-function ChartCard({ title, children }: ChartCardProps) {
+function ChartCard({ title, variant = 'aurora', children }: ChartCardProps) {
   return (
-    <div className='bg-white dark:bg-gray-800 rounded-lg shadow p-6'>
-      <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-4'>
-        {title}
-      </h3>
+    <div
+      className={`rounded-2xl border border-white/10 shadow-xl p-6 ${chartVariants[variant]}`}
+    >
+      <h3 className='text-lg font-semibold mb-4 drop-shadow'>{title}</h3>
       {children}
     </div>
   );
@@ -60,7 +68,7 @@ function ChartCard({ title, children }: ChartCardProps) {
 
 export function GoalProgressChart() {
   return (
-    <ChartCard title='Weekly Goal Progress'>
+    <ChartCard title='Weekly Goal Progress' variant='aurora'>
       <ResponsiveContainer width='100%' height={300}>
         <AreaChart data={goalProgressData}>
           <CartesianGrid strokeDasharray='3 3' className='opacity-30' />
@@ -102,7 +110,7 @@ export function GoalProgressChart() {
 
 export function CategoryBreakdownChart() {
   return (
-    <ChartCard title='Goals by Category'>
+    <ChartCard title='Goals by Category' variant='citrus'>
       <ResponsiveContainer width='100%' height={300}>
         <PieChart>
           <Pie
@@ -135,7 +143,7 @@ export function CategoryBreakdownChart() {
 
 export function WeeklyStatsChart() {
   return (
-    <ChartCard title='Weekly Achievements'>
+    <ChartCard title='Weekly Achievements' variant='mint'>
       <ResponsiveContainer width='100%' height={300}>
         <BarChart data={weeklyStatsData}>
           <CartesianGrid strokeDasharray='3 3' className='opacity-30' />
@@ -181,6 +189,7 @@ export function StatsCards() {
       change: '+12%',
       changeType: 'positive',
       icon: '🎯',
+      bg: 'from-[#ff758c] to-[#ff7eb3]',
     },
     {
       name: 'Completed',
@@ -188,6 +197,7 @@ export function StatsCards() {
       change: '+8%',
       changeType: 'positive',
       icon: '✅',
+      bg: 'from-[#43cea2] to-[#185a9d]',
     },
     {
       name: 'Success Rate',
@@ -195,6 +205,7 @@ export function StatsCards() {
       change: '+5%',
       changeType: 'positive',
       icon: '📈',
+      bg: 'from-[#4776e6] to-[#8e54e9]',
     },
     {
       name: 'Streak',
@@ -202,6 +213,7 @@ export function StatsCards() {
       change: '+2 days',
       changeType: 'positive',
       icon: '🔥',
+      bg: 'from-[#f7971e] to-[#ffd200]',
     },
   ];
 
@@ -210,20 +222,16 @@ export function StatsCards() {
       {stats.map((stat) => (
         <div
           key={stat.name}
-          className='bg-white dark:bg-gray-800 rounded-lg shadow p-6'
+          className={`rounded-2xl p-6 text-white shadow-xl border border-white/10 bg-gradient-to-br ${stat.bg}`}
         >
           <div className='flex items-center'>
             <div className='flex-shrink-0'>
               <span className='text-2xl'>{stat.icon}</span>
             </div>
             <div className='ml-4'>
-              <p className='text-sm font-medium text-gray-600 dark:text-gray-400'>
-                {stat.name}
-              </p>
-              <p className='text-2xl font-semibold text-gray-900 dark:text-white'>
-                {stat.value}
-              </p>
-              <p className='text-sm text-green-600 dark:text-green-400'>
+              <p className='text-sm font-medium opacity-80'>{stat.name}</p>
+              <p className='text-2xl font-semibold'>{stat.value}</p>
+              <p className='text-sm text-white/80'>
                 {stat.change} from last week
               </p>
             </div>

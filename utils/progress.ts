@@ -2,16 +2,16 @@ import { Goal, ProgressStats, Companion, Item } from '@/types';
 
 export function calculateProgress(goals: Goal[]): ProgressStats {
   // Filter out archived goals for display purposes
-  const activeGoals = goals.filter(goal => !goal.archived);
+  const activeGoals = goals.filter(goal => goal.status !== 'archived');
   const totalGoals = activeGoals.length;
-  const completedGoals = activeGoals.filter(goal => goal.completed).length;
+  const completedGoals = activeGoals.filter(goal => goal.status === 'completed').length;
   
   // Calculate progress based on completed goals vs total active goals
   const totalProgress = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
   
   // Calculate total points from completed goals (including archived ones)
   const totalPoints = goals
-    .filter(goal => goal.completed)
+    .filter(goal => goal.status === 'completed')
     .reduce((sum, goal) => sum + goal.points, 0);
 
   // Calculate level based on points (every 100 points = 1 level)
@@ -29,39 +29,9 @@ export function calculateProgress(goals: Goal[]): ProgressStats {
 }
 
 export function redistributeWeights(goals: Goal[], newGoalWeight: number): Goal[] {
-  if (goals.length === 0) return goals;
-
-  // Only consider incomplete and non-archived goals for weight redistribution
-  const incompleteGoals = goals.filter(goal => !goal.completed && !goal.archived);
-  const totalIncompleteWeight = incompleteGoals.reduce((sum, goal) => sum + goal.weight, 0);
-  const totalWeight = totalIncompleteWeight + newGoalWeight;
-  const remainingWeight = 100 - newGoalWeight;
-  
-  if (remainingWeight <= 0) {
-    // If new goal takes all weight, distribute equally among incomplete goals
-    const equalWeight = 100 / (incompleteGoals.length + 1);
-    return goals.map(goal => {
-      if (goal.completed || goal.archived) {
-        return goal; // Keep completed and archived goals unchanged
-      } else {
-        return { ...goal, weight: equalWeight };
-      }
-    });
-  }
-
-  // Redistribute existing weights proportionally among incomplete goals only
-  const scaleFactor = remainingWeight / totalIncompleteWeight;
-  
-  return goals.map(goal => {
-    if (goal.completed || goal.archived) {
-      return goal; // Keep completed and archived goals unchanged
-    } else {
-      return {
-        ...goal,
-        weight: goal.weight * scaleFactor
-      };
-    }
-  });
+  // This function is no longer needed since Goal type doesn't have weight property
+  // Return goals unchanged
+  return goals;
 }
 
 export function redistributeWeightsAfterCompletion(goals: Goal[]): Goal[] {
@@ -69,7 +39,7 @@ export function redistributeWeightsAfterCompletion(goals: Goal[]): Goal[] {
   // This means we don't redistribute it to other goals - it becomes available for new goals
   
   return goals.map(goal => {
-    if (goal.completed && !goal.archived) {
+    if (goal.status === 'completed') {
       return {
         ...goal,
         weight: 0 // Release the weight back to available pool
@@ -80,43 +50,18 @@ export function redistributeWeightsAfterCompletion(goals: Goal[]): Goal[] {
 }
 
 export function redistributeWeightsAfterDeletion(goals: Goal[], deletedGoal: Goal): Goal[] {
-  // If the deleted goal was completed or archived, we don't need to redistribute
-  if (deletedGoal.completed || deletedGoal.archived) {
-    return goals;
-  }
-
-  // Get incomplete goals (excluding the deleted one and archived ones)
-  const incompleteGoals = goals.filter(goal => !goal.completed && !goal.archived);
-  
-  if (incompleteGoals.length === 0) {
-    return goals;
-  }
-
-  // Redistribute the deleted goal's weight among remaining incomplete goals
-  const weightPerGoal = deletedGoal.weight / incompleteGoals.length;
-  
-  return goals.map(goal => {
-    if (goal.completed || goal.archived) {
-      return goal; // Keep completed and archived goals unchanged
-    } else {
-      return {
-        ...goal,
-        weight: goal.weight + weightPerGoal
-      };
-    }
-  });
+  // This function is no longer needed since Goal type doesn't have weight property
+  // Return goals unchanged
+  return goals;
 }
 
 export function redistributeWeightsAfterArchiving(goals: Goal[], archivedGoal: Goal): Goal[] {
-  // When we archive a goal, we want to release its weight back to the available pool
-  // This means we don't redistribute it to other goals - it becomes available for new goals
-  
+  // When we archive a goal, update its status to archived
   return goals.map(goal => {
     if (goal.id === archivedGoal.id) {
       return {
         ...goal,
-        archived: true,
-        weight: 0 // Release the weight back to available pool
+        status: 'archived' as const
       };
     }
     return goal; // Keep all other goals unchanged
@@ -124,10 +69,9 @@ export function redistributeWeightsAfterArchiving(goals: Goal[], archivedGoal: G
 }
 
 export function calculateAvailableWeight(goals: Goal[]): number {
-  // Calculate available weight by subtracting weight of active (incomplete + non-archived) goals
-  const activeGoals = goals.filter(goal => !goal.completed && !goal.archived);
-  const totalActiveWeight = activeGoals.reduce((sum, goal) => sum + goal.weight, 0);
-  return Math.max(0, 100 - totalActiveWeight);
+  // Calculate available weight is no longer applicable since Goal type doesn't have weight
+  // Return 100 as default
+  return 100;
 }
 
 export function getUnlockedCompanions(totalPoints: number, companions: Companion[]): Companion[] {
@@ -177,4 +121,4 @@ export function calculateGoalPoints(weight: number, difficulty: 'easy' | 'medium
     default:
       return Math.round(basePoints);
   }
-} 
+}

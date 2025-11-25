@@ -109,7 +109,7 @@ function DashboardContent() {
   const [goals, setGoals] = useState<Goal[]>(sampleGoals);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'goals'>('overview');
-  const { showSuccess, showError } = useToast();
+  const { showSuccess } = useToast();
 
   const handleAddGoal = (
     goalData: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>,
@@ -187,7 +187,7 @@ function DashboardContent() {
     <DashboardLayout>
       <div className='space-y-8'>
         {/* Tab Navigation */}
-        <div className='border-b border-gray-200 dark:border-gray-700'>
+        <div className='border-b border-gray-200 dark:border-white/10'>
           <nav className='flex space-x-8'>
             <button
               onClick={() => setActiveTab('overview')}
@@ -215,7 +215,7 @@ function DashboardContent() {
         {activeTab === 'overview' && (
           <>
             {/* Welcome Section */}
-            <div className='bg-gradient-to-r from-deep_sky_blue-500 to-bright_gold-500 rounded-lg p-6 text-white'>
+            <div className='bg-gradient-to-r from-[#6d28d9] via-[#2563eb] to-[#14b8a6] rounded-2xl p-6 text-white shadow-xl border border-white/10'>
               <h1 className='text-3xl font-bold mb-2'>Welcome back! 👋</h1>
               <p className='text-lg opacity-90 mb-4'>
                 You've completed{' '}
@@ -258,10 +258,8 @@ function DashboardContent() {
         )}
 
         {/* Quick Actions */}
-        <div className='bg-white dark:bg-gray-800 rounded-lg shadow p-6'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
-            Quick Actions
-          </h2>
+        <div className='rounded-2xl border border-white/10 bg-gradient-to-br from-[#1f1f3a] via-[#181826] to-[#0f0f17] p-6 text-white shadow-2xl'>
+          <h2 className='text-xl font-semibold mb-4'>Quick Actions</h2>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
             <ThemeButton
               variant='primary'
@@ -283,7 +281,7 @@ function DashboardContent() {
         </div>
 
         {/* Custom Color Test Buttons */}
-        <div className='bg-white dark:bg-gray-800 rounded-lg shadow p-6'>
+        <div className='rounded-2xl border border-white/10 bg-gradient-to-br from-white via-deep_sky_blue-50 to-bright_gold-50 dark:from-[#1f1f1f] dark:via-[#222] dark:to-[#151515] shadow-xl p-6'>
           <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
             Custom Color Test - Light Mode
           </h2>
@@ -307,8 +305,8 @@ function DashboardContent() {
         </div>
 
         {/* Dark Mode Color Test Buttons */}
-        <div className='bg-white dark:bg-gray-800 rounded-lg shadow p-6'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
+        <div className='rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d0d0d] via-[#161616] to-[#1f1f1f] shadow-xl p-6'>
+          <h2 className='text-xl font-semibold text-white mb-4'>
             Custom Color Test - Dark Mode
           </h2>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4'>

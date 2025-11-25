@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { ToastProvider } from '@/components/dashboard/ToastSystem';
+import { FloatingQuickPanel } from '@/components/dashboard/FloatingQuickPanel';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <ToastProvider>
             <main>{children}</main>
           </ToastProvider>
+          <FloatingQuickPanel />
         </ThemeProvider>
       </body>
     </html>

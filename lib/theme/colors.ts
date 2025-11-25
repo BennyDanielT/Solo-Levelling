@@ -219,6 +219,31 @@ export const tailwindColors = {
   ...darkPalette
 };
 
+export const themeColorTokens = {
+  light: {
+    primary: lightPalette.deep_sky_blue[500],
+    secondary: lightPalette.bright_gold[500],
+    success: lightPalette.slime_lime[500],
+    warning: lightPalette.vivid_tangerine[500],
+    error: darkPalette.strawberry_red[500],
+    background: '#f5f6f8',
+    surface: '#ffffff',
+    text: '#0f172a',
+    textSecondary: '#475569',
+  },
+  dark: {
+    primary: darkPalette.blue_slate[400],
+    secondary: darkPalette.tuscan_sun[500],
+    success: darkPalette.willow_green[400],
+    warning: darkPalette.atomic_tangerine[400],
+    error: darkPalette.strawberry_red[500],
+    background: '#292929',
+    surface: '#1f1f1f',
+    text: '#f8fafc',
+    textSecondary: '#cbd5f5',
+  },
+};
+
 // Best practices:
 // 1. Use semantic names (primary, secondary) over direct color names
 // 2. Always provide both light and dark variants
