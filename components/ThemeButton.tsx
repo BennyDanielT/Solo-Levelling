@@ -26,23 +26,29 @@ export function ThemeButton() {
     <button
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className={`
-        px-4 py-2 rounded-lg font-medium transition-all duration-200
-        flex items-center gap-2
-        ${
-          isDark
-            ? 'bg-primary-600 hover:bg-primary-700 text-white'
-            : 'bg-primary-100 hover:bg-primary-200 text-primary-900'
-        }
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-      `}
+      className="
+        group relative inline-flex items-center gap-2
+        px-4 py-2 rounded-xl font-medium
+        transition-all duration-300 ease-in-out
+        bg-white/10 dark:bg-gray-800/50
+        hover:bg-white/20 dark:hover:bg-gray-700/50
+        border border-gray-200/50 dark:border-gray-700/50
+        text-gray-700 dark:text-gray-200
+        shadow-sm hover:shadow-md
+        backdrop-blur-sm
+        focus:outline-none focus:ring-2 focus:ring-blue-500/50
+      "
     >
-      {isDark ? (
-        <SunIcon className='w-4 h-4' />
-      ) : (
-        <MoonIcon className='w-4 h-4' />
-      )}
-      {isDark ? 'Light' : 'Dark'}
+      <div className="relative w-5 h-5 transition-transform duration-300 group-hover:scale-110">
+        {isDark ? (
+          <SunIcon className="w-5 h-5 text-amber-400" />
+        ) : (
+          <MoonIcon className="w-5 h-5 text-blue-500" />
+        )}
+      </div>
+      <span className="text-sm font-semibold">
+        {isDark ? 'Light' : 'Dark'}
+      </span>
     </button>
   );
 }

@@ -35,7 +35,7 @@ Update your `.env.local` file:
 DATABASE_URL="mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/solo-leveling-db?retryWrites=true&w=majority"
 
 # NextAuth
-NEXTAUTH_URL="http://localhost:3001"
+NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-super-secret-key-change-this-in-production"
 
 # Google OAuth

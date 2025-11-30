@@ -108,7 +108,7 @@ const testModelAccess = async () => {
   console.log('💡 Make sure your dev server is running (npm run dev)\n');
 
   modelFiles.forEach((file) => {
-    const url = `http://localhost:3001/models/characters/${file}`;
+    const url = `http://localhost:3000/models/characters/${file}`;
     console.log(`📡 Test URL: ${url}`);
   });
 

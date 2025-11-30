@@ -1,20 +1,22 @@
 services:
-  # mongodb:
-  #   image: mongo:4.4
-  #   container_name: solo-leveling-mongodb
-  #   restart: unless-stopped
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS}
-  #   volumes:
-  #     - mongodb_data:/data/db
-  #   healthcheck:
-  #     test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USER}", "--password", "${MONGO_ROOT_PASS}", "--eval", "db.adminCommand('ping')"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
-  #   networks:
-  #     - solo-leveling-network
+  mongodb:
+    image: mongo:4.4
+    container_name: solo-leveling-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USER}", "--password", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - solo-leveling-network
 
   # mongo-init:
   #   image: mongo:4.4

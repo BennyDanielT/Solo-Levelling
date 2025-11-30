@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { ToastProvider } from '@/components/dashboard/ToastSystem';
 import { FloatingQuickPanel } from '@/components/dashboard/FloatingQuickPanel';
+import SessionProvider from '@/components/SessionProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,14 +23,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <body className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white'>
-        <ThemeProvider>
-          <ToastProvider>
-            <main>{children}</main>
-          </ToastProvider>
-          <FloatingQuickPanel />
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <main>{children}</main>
+            </ToastProvider>
+            <FloatingQuickPanel />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

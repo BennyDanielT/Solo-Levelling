@@ -29,10 +29,10 @@ const goalProgressData = [
 ];
 
 const categoryData = [
-  { name: 'Work', value: 35, color: '#01befe' },
-  { name: 'Health', value: 25, color: '#ffdd00' },
-  { name: 'Personal', value: 20, color: '#ff7d00' },
-  { name: 'Learning', value: 20, color: '#adff02' },
+  { name: 'Work', value: 35, color: '#3b82f6' },      // Modern blue
+  { name: 'Health', value: 25, color: '#10b981' },    // Emerald
+  { name: 'Personal', value: 20, color: '#a855f7' },  // Violet
+  { name: 'Learning', value: 20, color: '#f59e0b' },  // Amber
 ];
 
 const weeklyStatsData = [
@@ -43,9 +43,9 @@ const weeklyStatsData = [
 ];
 
 const chartVariants: Record<string, string> = {
-  aurora: 'bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-white',
-  citrus: 'bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-white',
-  mint: 'bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-white',
+  aurora: 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white border-gray-200/50 dark:border-gray-700/50',
+  citrus: 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white border-gray-200/50 dark:border-gray-700/50',
+  mint: 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white border-gray-200/50 dark:border-gray-700/50',
 };
 
 interface ChartCardProps {
@@ -57,7 +57,7 @@ interface ChartCardProps {
 function ChartCard({ title, variant = 'aurora', children }: ChartCardProps) {
   return (
     <div
-      className={`rounded-2xl border border-white/10 shadow-xl p-6 ${chartVariants[variant]}`}
+      className={`rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 p-6 ${chartVariants[variant]}`}
     >
       <h3 className='text-lg font-semibold mb-4 drop-shadow'>{title}</h3>
       {children}
@@ -89,16 +89,16 @@ export function GoalProgressChart() {
             type='monotone'
             dataKey='completed'
             stackId='1'
-            stroke='#01befe'
-            fill='#01befe'
+            stroke='#f97316'
+            fill='#f97316'
             fillOpacity={0.6}
           />
           <Area
             type='monotone'
             dataKey='total'
             stackId='2'
-            stroke='#ffdd00'
-            fill='#ffdd00'
+            stroke='#06b6d4'
+            fill='#06b6d4'
             fillOpacity={0.3}
           />
         </AreaChart>
@@ -163,13 +163,13 @@ export function WeeklyStatsChart() {
           <Legend />
           <Bar
             dataKey='goals'
-            fill='#01befe'
+            fill='#10b981'
             name='Goals Set'
             radius={[4, 4, 0, 0]}
           />
           <Bar
             dataKey='achievements'
-            fill='#adff02'
+            fill='#facc15'
             name='Achievements'
             radius={[4, 4, 0, 0]}
           />
@@ -199,31 +199,30 @@ export function StatsCards() {
       value: '3h 45m',
       subtext: 'Deep work minutes',
       icon: '⏱️',
-      bgColor: '#01befe', // deep_sky_blue
+      bgColor: '#3b82f6', // modern blue
     },
     {
       name: 'Goals Progress',
       value: '68%',
       subtext: 'Weekly milestones hit',
       icon: '🎯',
-      bgColor: '#ffdd00', // bright_gold
+      bgColor: '#a855f7', // violet
     },
     {
       name: 'Streak',
       value: '12 days',
       subtext: 'Consecutive action days',
       icon: '🔥',
-      bgColor: '#ff7d00', // vivid_tangerine
+      bgColor: '#f97316', // orange
     },
     {
-      name: 'Context Switches',
+      name: 'Content Switches',
       value: '4',
-      subtext: 'Task interruptions today',
-      icon: '🔄',
-      bgColor: '#adff02', // slime_lime
+      subtext: 'interactions today',
+      icon: '🎨',
+      bgColor: '#10b981', // emerald
     },
   ];
-
   // Goals & Progress Metrics
   const goalsMetrics = [
     {
@@ -231,28 +230,28 @@ export function StatsCards() {
       value: '3',
       subtext: 'goals finished',
       icon: '✅',
-      bgColor: '#90be6d', // willow_green
+      bgColor: '#10b981', // emerald
     },
     {
       name: 'Completed This Week',
       value: '12',
       subtext: 'weekly total',
       icon: '📊',
-      bgColor: '#01befe',
+      bgColor: '#3b82f6', // blue
     },
     {
       name: 'Active Goals',
       value: '8',
       subtext: 'in progress',
       icon: '🎯',
-      bgColor: '#ffdd00',
+      bgColor: '#a855f7', // violet
     },
     {
       name: 'Stalled Goals',
       value: '2',
       subtext: 'no progress in 5+ days',
       icon: '⏸️',
-      bgColor: '#f94144', // strawberry_red
+      bgColor: '#f43f5e', // rose
     },
   ];
 
@@ -263,28 +262,28 @@ export function StatsCards() {
       value: '3h 45m',
       subtext: 'uninterrupted blocks',
       icon: '💼',
-      bgColor: '#01befe',
+      bgColor: '#3b82f6', // blue
     },
     {
       name: 'Planned vs Reactive',
       value: '75% / 25%',
       subtext: 'time allocation',
       icon: '⚙️',
-      bgColor: '#adff02',
+      bgColor: '#10b981', // emerald
     },
     {
       name: 'Flow Time',
       value: '2h 30m',
       subtext: 'high focus periods',
       icon: '✨',
-      bgColor: '#90be6d',
+      bgColor: '#a855f7', // violet
     },
     {
       name: 'Top Tasks Done',
       value: '5',
       subtext: 'completed by impact',
       icon: '📝',
-      bgColor: '#ffdd00',
+      bgColor: '#f59e0b', // amber
     },
   ];
 
@@ -295,21 +294,21 @@ export function StatsCards() {
       value: '2h 15m',
       subtext: 'with loved ones today',
       icon: '❤️',
-      bgColor: '#f94144',
+      bgColor: '#f43f5e', // rose
     },
     {
       name: 'Social Connections',
       value: '4',
       subtext: 'messages/calls this week',
       icon: '💬',
-      bgColor: '#ff7d00',
+      bgColor: '#f97316', // orange
     },
     {
       name: 'Social Energy',
       value: '8/10',
       subtext: 'after interactions',
       icon: '⚡',
-      bgColor: '#01befe',
+      bgColor: '#06b6d4', // cyan
     },
   ];
 
@@ -320,21 +319,21 @@ export function StatsCards() {
       value: '1h 20m',
       subtext: 'focused study today',
       icon: '📚',
-      bgColor: '#8f00ff', // violet_ray
+      bgColor: '#a855f7', // violet
     },
     {
       name: 'Pages Read',
       value: '28',
       subtext: 'this week',
       icon: '📖',
-      bgColor: '#01befe',
+      bgColor: '#3b82f6', // blue
     },
     {
       name: 'Practice Sessions',
       value: '3',
       subtext: 'across 2 skills',
       icon: '🎸',
-      bgColor: '#adff02',
+      bgColor: '#10b981', // emerald
     },
   ];
 
@@ -345,21 +344,21 @@ export function StatsCards() {
       value: '6/8',
       subtext: 'completed this week',
       icon: '💡',
-      bgColor: '#ffdd00',
+      bgColor: '#3b82f6',
     },
     {
       name: 'Impact Score',
       value: '8/10',
       subtext: 'weekly career impact',
       icon: '🚀',
-      bgColor: '#ff7d00',
+      bgColor: '#f59e0b',
     },
     {
       name: 'Learning Progress',
       value: '45%',
       subtext: 'certification course',
       icon: '🏆',
-      bgColor: '#90be6d',
+      bgColor: '#10b981',
     },
   ];
 
@@ -370,14 +369,14 @@ export function StatsCards() {
       value: '$248',
       subtext: 'of $400 budget',
       icon: '💰',
-      bgColor: '#90be6d',
+      bgColor: '#10b981',
     },
     {
       name: 'Savings Rate',
       value: '32%',
       subtext: 'of monthly income',
       icon: '🏦',
-      bgColor: '#01befe',
+      bgColor: '#3b82f6',
     },
   ];
 
@@ -388,21 +387,21 @@ export function StatsCards() {
       value: '8 days',
       subtext: '7+ hours each night',
       icon: '😴',
-      bgColor: '#8f00ff',
+      bgColor: '#a855f7',
     },
     {
       name: 'Workout Streak',
       value: '5 days',
       subtext: 'consecutive workouts',
       icon: '💪',
-      bgColor: '#f94144',
+      bgColor: '#f43f5e',
     },
     {
       name: 'Planning Consistency',
       value: '9/10',
       subtext: 'days with daily planning',
       icon: '📋',
-      bgColor: '#ffdd00',
+      bgColor: '#f59e0b',
     },
   ];
 
@@ -461,15 +460,15 @@ export function StatsCards() {
   return (
     <div className='space-y-6'>
       {/* Tab Navigation */}
-      <div className='flex flex-wrap gap-2 border-b border-gray-200 dark:border-white/10 pb-4'>
+      <div className='flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700/50 pb-4'>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
               activeTab === tab.id
-                ? 'bg-[#01befe] text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 hover:bg-gray-200 dark:hover:bg-white/20'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700/50'
             }`}
           >
             {tab.label}
