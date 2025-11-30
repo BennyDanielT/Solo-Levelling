@@ -51,12 +51,18 @@
 
 @layer base {
   * {
-    @apply border-gray-600;
+    @apply border-gray-200;
   }
   body {
-    @apply bg-gray-900 text-white;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    margin: 0;
     min-height: 100vh;
+    background-color: #f5f6f8;
+    color: #0f172a;
+    font-feature-settings: 'ss01';
+  }
+  .dark body {
+    background-color: #292929;
+    color: #f8fafc;
   }
 }
 

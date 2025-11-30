@@ -2,12 +2,19 @@ export interface Goal {
   id: string;
   title: string;
   description: string;
-  weight: number; // percentage weight (0-100)
-  completed: boolean;
-  archived: boolean; // whether the goal is archived
-  points: number; // points awarded when completed
+  category: 'work' | 'personal' | 'health' | 'learning' | 'finance' | 'relationships' | 'other';
+  priority: 'low' | 'medium' | 'high';
+  status: 'active' | 'completed' | 'archived';
+  progress: number; // 0-100 percentage
+  targetValue?: number; // optional target for measurable goals
+  currentValue?: number; // optional current progress for measurable goals
+  unit?: string; // unit for measurable goals (e.g., 'hours', 'pages', 'lbs')
+  deadline?: Date;
+  tags: string[];
   createdAt: Date;
+  updatedAt: Date;
   completedAt?: Date;
+  points: number; // points awarded when completed
 }
 
 export interface User {
