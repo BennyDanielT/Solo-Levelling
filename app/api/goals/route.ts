@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 
 const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || 'http://localhost:8000'
 
+export const dynamic = 'force-dynamic'
+
 async function getAuthToken(session: any) {
   // In a real implementation, you'd exchange the NextAuth session for a FastAPI JWT
   // For now, we'll pass the email and let FastAPI handle it

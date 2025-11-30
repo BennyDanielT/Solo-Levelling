@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 
 const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || 'http://localhost:8000'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

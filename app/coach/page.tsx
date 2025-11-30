@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Sparkles } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -15,7 +17,9 @@ interface Message {
 }
 
 export default function CoachPage() {
-  const { data: session, status } = useSession();
+  const session = useSession();
+  const sessionData = session?.data;
+  const sessionStatus = session?.status || 'loading';
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -34,10 +38,10 @@ export default function CoachPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (sessionStatus === 'unauthenticated') {
       window.location.href = '/auth/signin';
     }
-  }, [status]);
+  }, [sessionStatus]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -108,7 +112,7 @@ export default function CoachPage() {
     }
   };
 
-  if (status === 'loading') {
+  if (sessionStatus === 'loading') {
     return (
       <div className='min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-700 flex items-center justify-center'>
         <div className='text-center'>
@@ -119,7 +123,7 @@ export default function CoachPage() {
     );
   }
 
-  if (!session) {
+  if (!sessionData) {
     return null;
   }
 
