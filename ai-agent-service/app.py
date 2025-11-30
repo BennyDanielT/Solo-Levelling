@@ -1,35 +1,328 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
 from azure.ai.agents import AgentsClient
 from azure.identity import DefaultAzureCredential
+from datetime import datetime, timedelta
+from bson import ObjectId
 import os
 from dotenv import load_dotenv
 import time
 
+from database import (
+    db, users_collection, goals_collection, achievements_collection, ping_db
+)
+from models import (
+    UserRegister, UserResponse, UserInDB,
+    GoalCreate, GoalResponse, GoalInDB,
+    AchievementResponse,
+    ChatRequest, ChatResponse
+)
+from auth import hash_password, verify_password, create_access_token, get_current_user
+
 load_dotenv()
 
-app = FastAPI(title="Azure AI Agent Service")
+app = FastAPI(title="Solo Levelling API")
 
-# Environment Configuration
-PROJECT_ENDPOINT = (
-    os.getenv("AZURE_AI_PROJECT_ENDPOINT")
-    or "https://rbc-interview-resource.services.ai.azure.com/api/projects/rbc-interview"
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-AGENT_ID = os.getenv("AZURE_EXISTING_AGENT_ID") or "asst_xxx"
 
+# Azure AI Configuration
+PROJECT_ENDPOINT = os.getenv("AZURE_AI_PROJECT_ENDPOINT", "")
+AGENT_ID = os.getenv("AZURE_EXISTING_AGENT_ID", "")
 
-class ChatRequest(BaseModel):
-    message: str
+@app.on_event("startup")
+async def startup_db_client():
+    await ping_db()
 
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "Solo Levelling API"}
 
-class ChatResponse(BaseModel):
-    responseText: str
-    threadId: str
-    runId: str
+# ==================== AUTH ROUTES ====================
 
+@app.post("/auth/register", response_model=dict, status_code=201)
+async def register(user: UserRegister):
+    """Register a new user"""
+    # Check if user exists
+    existing_user = await users_collection.find_one({"email": user.email})
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="User with this email already exists"
+        )
+    
+    if user.username:
+        existing_username = await users_collection.find_one({"username": user.username})
+        if existing_username:
+            raise HTTPException(
+                status_code=400,
+                detail="Username is already taken"
+            )
+    
+    # Hash password
+    hashed_password = hash_password(user.password)
+    
+    # Create user document
+    user_doc = {
+        "name": user.name,
+        "email": user.email,
+        "username": user.username,
+        "password": hashed_password,
+        "image": user.image,
+        "level": 1,
+        "totalPoints": 0,
+        "rank": "E",
+        "title": "Awakened Hunter",
+        "loginPlatform": "email",
+        "platformId": None,
+        "joinedAt": datetime.utcnow(),
+        "lastActive": datetime.utcnow(),
+        "preferences": {
+            "theme": "dark",
+            "notifications": True,
+            "language": "en"
+        }
+    }
+    
+    result = await users_collection.insert_one(user_doc)
+    user_doc["_id"] = str(result.inserted_id)
+    
+    # Create access token
+    access_token = create_access_token(
+        data={"sub": user.email},
+        expires_delta=timedelta(days=7)
+    )
+    
+    return {
+        "success": True,
+        "message": "User registered successfully",
+        "data": {
+            "user": {
+                "id": str(result.inserted_id),
+                "name": user.name,
+                "email": user.email,
+                "username": user.username,
+                "level": 1,
+                "totalPoints": 0,
+                "rank": "E",
+                "title": "Awakened Hunter"
+            },
+            "token": access_token
+        }
+    }
+
+@app.post("/auth/login")
+async def login(email: str, password: str):
+    """Login user"""
+    user = await users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    if not verify_password(password, user["password"]):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    # Update last active
+    await users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"lastActive": datetime.utcnow()}}
+    )
+    
+    # Create access token
+    access_token = create_access_token(
+        data={"sub": email},
+        expires_delta=timedelta(days=7)
+    )
+    
+    return {
+        "success": True,
+        "data": {
+            "token": access_token,
+            "user": {
+                "id": str(user["_id"]),
+                "email": user["email"],
+                "name": user.get("name"),
+                "username": user.get("username"),
+                "level": user.get("level", 1),
+                "rank": user.get("rank", "E")
+            }
+        }
+    }
+
+# ==================== USER ROUTES ====================
+
+@app.get("/user/profile")
+async def get_profile(current_user: dict = Depends(get_current_user)):
+    """Get user profile"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Count goals and achievements
+    goals_count = await goals_collection.count_documents({"userId": str(user["_id"])})
+    achievements_count = await achievements_collection.count_documents({"userId": str(user["_id"])})
+    
+    # Update last active
+    await users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"lastActive": datetime.utcnow()}}
+    )
+    
+    return {
+        "success": True,
+        "data": {
+            "id": str(user["_id"]),
+            "name": user.get("name"),
+            "email": user["email"],
+            "username": user.get("username"),
+            "level": user.get("level", 1),
+            "totalPoints": user.get("totalPoints", 0),
+            "rank": user.get("rank", "E"),
+            "title": user.get("title", "Awakened Hunter"),
+            "loginPlatform": user.get("loginPlatform", "email"),
+            "joinedAt": user.get("joinedAt"),
+            "lastActive": user.get("lastActive"),
+            "preferences": user.get("preferences", {}),
+            "_count": {
+                "goals": goals_count,
+                "achievements": achievements_count
+            }
+        }
+    }
+
+# ==================== GOALS ROUTES ====================
+
+@app.get("/goals")
+async def get_goals(current_user: dict = Depends(get_current_user)):
+    """Get all goals for current user"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    goals_cursor = goals_collection.find({"userId": str(user["_id"])}).sort("createdAt", -1)
+    goals = await goals_cursor.to_list(length=100)
+    
+    # Convert ObjectId to string
+    for goal in goals:
+        goal["id"] = str(goal.pop("_id"))
+    
+    return {
+        "success": True,
+        "data": goals
+    }
+
+@app.post("/goals", status_code=201)
+async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new goal"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Calculate points if not provided
+    points = goal.points if goal.points else int(goal.weight * 2)
+    
+    goal_doc = {
+        "title": goal.title,
+        "description": goal.description,
+        "weight": goal.weight,
+        "difficulty": goal.difficulty,
+        "points": points,
+        "category": goal.category,
+        "priority": goal.priority,
+        "tags": goal.tags,
+        "userId": str(user["_id"]),
+        "completed": False,
+        "archived": False,
+        "createdAt": datetime.utcnow(),
+        "completedAt": None,
+        "updatedAt": datetime.utcnow()
+    }
+    
+    result = await goals_collection.insert_one(goal_doc)
+    goal_doc["id"] = str(result.inserted_id)
+    goal_doc.pop("_id", None)
+    
+    return {
+        "success": True,
+        "message": "Goal created successfully",
+        "data": goal_doc
+    }
+
+@app.put("/goals/{goal_id}")
+async def update_goal(goal_id: str, completed: bool, current_user: dict = Depends(get_current_user)):
+    """Update goal completion status"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    goal = await goals_collection.find_one({
+        "_id": ObjectId(goal_id),
+        "userId": str(user["_id"])
+    })
+    
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    update_data = {
+        "completed": completed,
+        "updatedAt": datetime.utcnow()
+    }
+    
+    if completed and not goal.get("completed"):
+        update_data["completedAt"] = datetime.utcnow()
+        # Award points
+        points = goal.get("points", 0)
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"totalPoints": points}}
+        )
+    
+    await goals_collection.update_one(
+        {"_id": ObjectId(goal_id)},
+        {"$set": update_data}
+    )
+    
+    return {
+        "success": True,
+        "message": "Goal updated successfully"
+    }
+
+@app.delete("/goals/{goal_id}")
+async def delete_goal(goal_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a goal"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    result = await goals_collection.delete_one({
+        "_id": ObjectId(goal_id),
+        "userId": str(user["_id"])
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    return {
+        "success": True,
+        "message": "Goal deleted successfully"
+    }
+
+# ==================== COACH/CHAT ROUTES ====================
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
+    """Chat with AI coach"""
     try:
         user_message = request.message
 
@@ -46,7 +339,7 @@ async def chat(request: ChatRequest):
         thread = client.threads.create()
         print(f"Created thread: {thread.id}")
 
-        # Create message (fixed signature)
+        # Create message
         message = client.messages.create(
             thread_id=thread.id, role="user", content=user_message
         )
@@ -82,8 +375,3 @@ async def chat(request: ChatRequest):
     except Exception as e:
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}

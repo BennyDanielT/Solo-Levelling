@@ -34,89 +34,96 @@ Perfect! Docker Desktop is now starting in the background. Let's wait a moment f
 
 ## Instructions to Spin Up Your Solo Levelling App
 
-**You'll need to manually start Docker Desktop first if it's not already running.** Once Docker Desktop is running, here's what you need to do:
+### Prerequisites
+1. Docker and Docker Compose installed
+2. `.env` file configured (copy from `.env.example`)
 
-### **Step 1: Start All Services**
-```powershell
+### Architecture
+The app now uses a **microservices architecture**:
+- **Next.js Frontend** (port 3000) - UI and routing
+- **FastAPI Backend** (port 8000) - MongoDB operations, auth, API endpoints
+- **MongoDB** (port 27017) - Database
+- **Mongo Express** (port 8081) - Database admin UI
+
+### **Step 1: Configure Environment Variables**
+```bash
+# Copy and edit the environment file
+cp .env.example .env
+# Make sure to set:
+# - MONGO_ROOT_USER and MONGO_ROOT_PASS
+# - NEXTAUTH_SECRET
+# - AZURE_AI_PROJECT_ENDPOINT and AZURE_EXISTING_AGENT_ID
+```
+
+### **Step 2: Start All Services**
+```bash
 docker-compose up --build -d
 ```
 
-This command will:
-- **Build** your Next.js application container
-- **Start MongoDB** with the initialization script
-- **Start Mongo Express** (database web UI)
-- **Start your Next.js app** in development mode
-- Run everything in **detached mode** (background)
-
-### **Step 2: Wait for Services to Initialize**
-The first startup will take a few minutes because:
-- Docker needs to download the MongoDB and Mongo Express images
-- Your Next.js app needs to be built
-- MongoDB needs to initialize with your custom script
+This will:
+- Start MongoDB with initialization
+- Build and start FastAPI backend service
+- Build and start Next.js frontend
+- Start Mongo Express UI
 
 ### **Step 3: Check Service Status**
-```powershell
+```bash
 docker-compose ps
 ```
 
-### **Step 4: View Logs (if needed)**
-```powershell
+### **Step 4: Access Your Applications**
+
+Once running:
+1. **Solo Levelling App**: http://localhost:3000
+2. **FastAPI Backend**: http://localhost:8000 (API docs at http://localhost:8000/docs)
+3. **MongoDB Web UI (Mongo Express)**: http://localhost:8081
+4. **MongoDB**: localhost:27017
+
+### **Service Details:**
+
+1. **FastAPI Backend** (`fastapi` service):
+   - Handles all MongoDB operations
+   - User authentication with JWT
+   - Goals, achievements, user profile APIs
+   - Azure AI Agent chat integration
+   
+2. **Next.js Frontend** (`app` service):
+   - Proxies API requests to FastAPI
+   - Handles UI rendering and routing
+   - NextAuth for session management
+
+3. **MongoDB** (`mongodb` service):
+   - Database: `solo_levelling`
+   - Collections: `users`, `goals`, `achievements`
+
+### **Useful Commands:**
+
+```bash
 # View all logs
 docker-compose logs
 
 # View specific service logs
+docker-compose logs fastapi
 docker-compose logs app
 docker-compose logs mongodb
-docker-compose logs mongo-express
-```
 
-### **Step 5: Access Your Applications**
+# Restart a specific service
+docker-compose restart fastapi
 
-Once everything is running, you can access:
-
-1. **Solo Levelling App**: http://localhost:3000
-2. **MongoDB Web UI (Mongo Express)**: http://localhost:8081
-3. **MongoDB Direct Connection**: localhost:27017
-
-### **Your Docker Setup Includes:**
-
-1. **MongoDB Database**:
-   - Credentials: `admin` / `solo-leveling-2024`
-   - Pre-configured with all necessary collections and indexes
-   - App user: `soloapp` / `solo-app-password-2024`
-
-2. **Next.js Application**:
-   - Runs in development mode with hot reload
-   - Connected to MongoDB automatically
-   - All environment variables pre-configured
-
-3. **Mongo Express**:
-   - Web-based MongoDB admin interface
-   - No authentication required (disabled for development)
-
-### **Useful Commands:**
-
-```powershell
 # Stop all services
 docker-compose down
 
 # Stop and remove all data
 docker-compose down -v
 
-# Rebuild only the app
-docker-compose up --build app
-
-# View real-time logs
-docker-compose logs -f
+# Rebuild specific service
+docker-compose up --build fastapi
 ```
 
 ### **Troubleshooting:**
 
-If you encounter any issues:
-
-1. **Check Docker Desktop is running**
-2. **Ensure no other services are using ports 3000, 8081, or 27017**
-3. **View logs**: `docker-compose logs`
+1. **Check all services are running**: `docker-compose ps`
+2. **View logs for errors**: `docker-compose logs -f`
+3. **Ensure ports are free**: 3000, 8000, 8081, 27017
 4. **Restart services**: `docker-compose restart`
-
-Once Docker Desktop finishes starting up (you'll see it in your system tray), run the `docker-compose up --build -d` command and your entire Solo Levelling application stack will be up and running!
+5. **Check FastAPI health**: `curl http://localhost:8000/health`

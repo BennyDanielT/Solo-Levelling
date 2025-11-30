@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+
+const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || 'http://localhost:8000'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,54 +18,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user with stats
-    const userWithStats = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        username: true,
-        level: true,
-        totalPoints: true,
-        rank: true,
-        title: true,
-        loginPlatform: true,
-        joinedAt: true,
-        lastActive: true,
-        preferences: true,
-        _count: {
-          select: {
-            goals: true,
-            achievements: true
-          }
-        }
-      }
+    const response = await fetch(`${FASTAPI_URL}/user/profile`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.user.email}`,
+      },
     })
 
-    if (!userWithStats) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'User not found'
-        },
-        { status: 404 }
-      )
-    }
-
-    // Update last active
-    await prisma.user.update({
-      where: { email: session.user.email },
-      data: { lastActive: new Date() }
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: userWithStats
-    })
+    const data = await response.json()
+    return NextResponse.json(data, { status: response.status })
 
   } catch (error) {
-    console.error('Get profile error:', error)
+    console.error('Get profile proxy error:', error)
     return NextResponse.json(
       {
         success: false,
