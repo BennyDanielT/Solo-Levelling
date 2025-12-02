@@ -118,8 +118,17 @@ async def register(user: UserRegister):
     }
 
 @app.post("/auth/login")
-async def login(email: str, password: str):
+async def login(credentials: dict):
     """Login user"""
+    email = credentials.get("email")
+    password = credentials.get("password")
+    
+    if not email or not password:
+        raise HTTPException(
+            status_code=422,
+            detail="Email and password are required"
+        )
+    
     user = await users_collection.find_one({"email": email})
     if not user:
         raise HTTPException(
@@ -146,17 +155,77 @@ async def login(email: str, password: str):
     )
     
     return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "name": user.get("name"),
+            "username": user.get("username"),
+            "level": user.get("level", 1),
+            "rank": user.get("rank", "E")
+        }
+    }
+
+@app.post("/auth/oauth-login")
+async def oauth_login(data: dict):
+    """Handle OAuth login (Google, etc.) and create/update user"""
+    email = data.get("email")
+    name = data.get("name")
+    image = data.get("image")
+    provider = data.get("provider", "google")
+    provider_id = data.get("providerId")
+    
+    if not email:
+        raise HTTPException(status_code=422, detail="Email is required")
+    
+    # Check if user exists
+    user = await users_collection.find_one({"email": email})
+    
+    if user:
+        # Update last active and image if changed
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "lastActive": datetime.utcnow(),
+                "image": image,
+                "loginPlatform": provider,
+                "platformId": provider_id
+            }}
+        )
+        return {"success": True, "message": "User updated"}
+    
+    # Create new user
+    user_doc = {
+        "name": name,
+        "email": email,
+        "username": None,
+        "password": None,  # OAuth users don't have password
+        "image": image,
+        "level": 1,
+        "totalPoints": 0,
+        "rank": "E",
+        "title": "Awakened Hunter",
+        "loginPlatform": provider,
+        "platformId": provider_id,
+        "joinedAt": datetime.utcnow(),
+        "lastActive": datetime.utcnow(),
+        "preferences": {
+            "theme": "dark",
+            "notifications": True,
+            "language": "en"
+        }
+    }
+    
+    result = await users_collection.insert_one(user_doc)
+    
+    return {
         "success": True,
+        "message": "User created",
         "data": {
-            "token": access_token,
-            "user": {
-                "id": str(user["_id"]),
-                "email": user["email"],
-                "name": user.get("name"),
-                "username": user.get("username"),
-                "level": user.get("level", 1),
-                "rank": user.get("rank", "E")
-            }
+            "id": str(result.inserted_id),
+            "email": email,
+            "name": name
         }
     }
 

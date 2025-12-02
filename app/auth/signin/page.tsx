@@ -18,19 +18,28 @@ export default function SignIn() {
     setError('');
 
     try {
+      console.log('Attempting sign in with:', email);
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
 
+      console.log('SignIn result:', result);
+
       if (result?.error) {
+        console.error('SignIn error:', result.error);
         setError('Invalid credentials');
       } else if (result?.ok) {
-        router.push('/');
+        console.log('Sign in successful, redirecting...');
+        router.push('/dashboard');
         router.refresh();
+      } else {
+        console.error('Unexpected result:', result);
+        setError('Sign in failed');
       }
     } catch (error) {
+      console.error('Exception during sign in:', error);
       setError('An error occurred');
     } finally {
       setIsLoading(false);

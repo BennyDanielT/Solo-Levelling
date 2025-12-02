@@ -1,5 +1,4 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.server_api import ServerApi
 import os
 from dotenv import load_dotenv
 
@@ -10,7 +9,7 @@ if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
 # Create MongoDB client
-client = AsyncIOMotorClient(DATABASE_URL, server_api=ServerApi('1'))
+client = AsyncIOMotorClient(DATABASE_URL)
 db = client.solo_levelling
 
 # Collections

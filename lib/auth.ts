@@ -9,6 +9,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -31,18 +38,24 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
-          if (!res.ok) return null;
-
           const data = await res.json();
+          console.log('Login response:', data);
+
+          if (!res.ok) {
+            console.error('Login failed:', data);
+            return null;
+          }
           
           if (data.access_token && data.user) {
             return {
               id: data.user.id,
               email: data.user.email,
-              name: data.user.username,
+              name: data.user.name || data.user.username || data.user.email,
               accessToken: data.access_token,
             };
           }
+          
+          console.error('Invalid response structure:', data);
           return null;
         } catch (error) {
           console.error('Auth error:', error);
@@ -56,12 +69,48 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  cookies: {
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false
+      }
+    }
+  },
   pages: {
     signIn: '/auth/signin',
     signOut: '/auth/signout',
     error: '/auth/error',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // For Google OAuth, save user to MongoDB
+      if (account?.provider === 'google' && user.email) {
+        try {
+          const res = await fetch(`${FASTAPI_URL}/auth/oauth-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              provider: 'google',
+              providerId: account.providerAccountId,
+            }),
+          });
+          
+          if (!res.ok) {
+            console.error('Failed to save OAuth user to MongoDB');
+          }
+        } catch (error) {
+          console.error('Error saving OAuth user:', error);
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = (user as any).accessToken;
