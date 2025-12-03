@@ -10,6 +10,11 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl
         
+        // Public routes - no auth required
+        if (pathname === '/') {
+          return true
+        }
+        
         // Always allow access to auth pages
         if (pathname.startsWith('/auth/')) {
           return true
@@ -26,13 +31,6 @@ export default withAuth(
             pathname.startsWith('/models/') ||
             pathname.includes('.')) {
           return true
-        }
-        
-        // For the root path, check if it's meant to be a landing page
-        // If no token and accessing root, allow (this will be the landing page)
-        // If token exists, allow (this will be the dashboard)
-        if (pathname === '/') {
-          return true // Allow both authenticated and unauthenticated users
         }
         
         // For all other routes, require authentication

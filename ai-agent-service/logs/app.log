@@ -1,0 +1,140 @@
+2025-12-02 13:53:57.992 | INFO     | app:register:65 - 🔵 [REGISTER] Registration request received for email: bd12bendan28@gmail.com
+2025-12-02 13:53:57.992 | INFO     | app:register:75 - 🔵 [REGISTER] Email verified status: False
+2025-12-02 13:53:57.993 | INFO     | app:register:76 - 🔵 [REGISTER] Has verification token: True
+2025-12-02 13:53:57.993 | INFO     | app:register:83 - 🔍 [REGISTER] Checking if user exists: bd12bendan28@gmail.com
+2025-12-02 13:53:57.995 | INFO     | app:register:103 - 🔐 [REGISTER] Hashing password
+2025-12-02 13:53:58.298 | INFO     | app:register:107 - 📝 [REGISTER] Creating user document
+2025-12-02 13:53:58.300 | INFO     | app:register:134 - ✅ [REGISTER] User created successfully with ID: 692f27b604fe1e2479b285e4
+2025-12-02 13:53:58.301 | INFO     | app:register:137 - 🔑 [REGISTER] Creating access token
+2025-12-02 13:53:58.301 | INFO     | app:register:143 - 🎉 [REGISTER] Registration complete for: bd12bendan28@gmail.com
+2025-12-02 14:08:48.906 | INFO     | app:register:65 - 🔵 [REGISTER] Registration request received for email: bd12bendan28@gmail.com
+2025-12-02 14:08:48.906 | INFO     | app:register:75 - 🔵 [REGISTER] Email verified status: False
+2025-12-02 14:08:48.907 | INFO     | app:register:76 - 🔵 [REGISTER] Has verification token: True
+2025-12-02 14:08:48.907 | INFO     | app:register:83 - 🔍 [REGISTER] Checking if user exists: bd12bendan28@gmail.com
+2025-12-02 14:08:48.933 | INFO     | app:register:103 - 🔐 [REGISTER] Hashing password
+2025-12-02 14:08:49.305 | INFO     | app:register:107 - 📝 [REGISTER] Creating user document
+2025-12-02 14:08:49.316 | INFO     | app:register:134 - ✅ [REGISTER] User created successfully with ID: 692f2b3104fe1e2479b285e5
+2025-12-02 14:08:49.317 | INFO     | app:register:137 - 🔑 [REGISTER] Creating access token
+2025-12-02 14:08:49.317 | INFO     | app:register:143 - 🎉 [REGISTER] Registration complete for: bd12bendan28@gmail.com
+2025-12-02 14:12:11.511 | INFO     | app:verify_email:281 - 📧 [VERIFY] Email verification request received
+2025-12-02 14:12:11.532 | INFO     | app:verify_email:288 - 🔍 [VERIFY] Looking up user with token: 2b8b8034...
+2025-12-02 14:12:11.584 | INFO     | app:verify_email:297 - ✅ [VERIFY] User found: bd12bendan28@gmail.com
+2025-12-02 14:14:26.341 | INFO     | app:verify_email:281 - 📧 [VERIFY] Email verification request received
+2025-12-02 14:14:26.342 | INFO     | app:verify_email:288 - 🔍 [VERIFY] Looking up user with token: 2b8b8034...
+2025-12-02 14:14:26.349 | INFO     | app:verify_email:297 - ✅ [VERIFY] User found: bd12bendan28@gmail.com
+2025-12-02 14:17:09.197 | INFO     | app:verify_email:281 - 📧 [VERIFY] Email verification request received
+2025-12-02 14:17:09.199 | INFO     | app:verify_email:288 - 🔍 [VERIFY] Looking up user with token: 2b8b8034...
+2025-12-02 14:17:09.204 | INFO     | app:verify_email:297 - ✅ [VERIFY] User found: bd12bendan28@gmail.com
+2025-12-02 14:17:09.205 | INFO     | app:verify_email:335 - 📝 [VERIFY] Updating user to verified: bd12bendan28@gmail.com
+2025-12-02 14:17:09.217 | INFO     | app:verify_email:346 - 🎉 [VERIFY] Email verified successfully for: bd12bendan28@gmail.com
+2025-12-02 14:18:39.411 | INFO     | app:login:166 - 🔵 [LOGIN] Login attempt for: bd12bendan28@gmail.com
+2025-12-02 14:18:39.763 | WARNING  | app:login:194 - ⚠️  [LOGIN] Invalid password for: bd12bendan28@gmail.com
+2025-12-02 14:18:41.461 | INFO     | app:login:166 - 🔵 [LOGIN] Login attempt for: bd12bendan28@gmail.com
+2025-12-02 14:18:41.791 | INFO     | app:login:206 - ✅ [LOGIN] Login successful: bd12bendan28@gmail.com
+2025-12-02 14:18:51.025 | INFO     | app:login:166 - 🔵 [LOGIN] Login attempt for: bd12bendan28@gmail.com
+2025-12-02 14:18:51.812 | INFO     | app:login:206 - ✅ [LOGIN] Login successful: bd12bendan28@gmail.com
+2025-12-02 14:24:29.708 | INFO     | app:login:166 - 🔵 [LOGIN] Login attempt for: bd12bendan28@gmail.com
+2025-12-02 14:24:29.717 | WARNING  | app:login:179 - ⚠️  [LOGIN] User not found: bd12bendan28@gmail.com
+2025-12-02 14:24:48.717 | INFO     | app:register:65 - 🔵 [REGISTER] Registration request received for email: bd12bendan28@gmail.com
+2025-12-02 14:24:48.717 | INFO     | app:register:75 - 🔵 [REGISTER] Email verified status: False
+2025-12-02 14:24:48.717 | INFO     | app:register:76 - 🔵 [REGISTER] Has verification token: True
+2025-12-02 14:24:48.718 | INFO     | app:register:83 - 🔍 [REGISTER] Checking if user exists: bd12bendan28@gmail.com
+2025-12-02 14:24:48.719 | INFO     | app:register:103 - 🔐 [REGISTER] Hashing password
+2025-12-02 14:24:49.018 | INFO     | app:register:107 - 📝 [REGISTER] Creating user document
+2025-12-02 14:24:49.041 | INFO     | app:register:134 - ✅ [REGISTER] User created successfully with ID: 692f2ef1f3b2d2d8df057a28
+2025-12-02 14:24:49.041 | INFO     | app:register:137 - 🔑 [REGISTER] Creating access token
+2025-12-02 14:24:49.042 | INFO     | app:register:143 - 🎉 [REGISTER] Registration complete for: bd12bendan28@gmail.com
+2025-12-02 14:25:46.883 | INFO     | app:verify_email:294 - 📧 [VERIFY] Email verification request received
+2025-12-02 14:25:46.884 | INFO     | app:verify_email:301 - 🔍 [VERIFY] Looking up user with token: 173e4348...
+2025-12-02 14:25:46.887 | INFO     | app:verify_email:310 - ✅ [VERIFY] User found: bd12bendan28@gmail.com
+2025-12-02 14:25:46.887 | INFO     | app:verify_email:348 - 📝 [VERIFY] Updating user to verified: bd12bendan28@gmail.com
+2025-12-02 14:25:46.890 | INFO     | app:verify_email:359 - 🎉 [VERIFY] Email verified successfully for: bd12bendan28@gmail.com
+2025-12-02 14:26:29.533 | INFO     | app:register:65 - 🔵 [REGISTER] Registration request received for email: benny28dany@gmail.com
+2025-12-02 14:26:29.534 | INFO     | app:register:75 - 🔵 [REGISTER] Email verified status: False
+2025-12-02 14:26:29.534 | INFO     | app:register:76 - 🔵 [REGISTER] Has verification token: True
+2025-12-02 14:26:29.534 | INFO     | app:register:83 - 🔍 [REGISTER] Checking if user exists: benny28dany@gmail.com
+2025-12-02 14:26:29.536 | INFO     | app:register:103 - 🔐 [REGISTER] Hashing password
+2025-12-02 14:26:29.830 | INFO     | app:register:107 - 📝 [REGISTER] Creating user document
+2025-12-02 14:26:29.852 | INFO     | app:register:134 - ✅ [REGISTER] User created successfully with ID: 692f2f55f3b2d2d8df057a29
+2025-12-02 14:26:29.853 | INFO     | app:register:137 - 🔑 [REGISTER] Creating access token
+2025-12-02 14:26:29.854 | INFO     | app:register:143 - 🎉 [REGISTER] Registration complete for: benny28dany@gmail.com
+2025-12-02 14:27:23.113 | INFO     | app:login:166 - 🔵 [LOGIN] Login attempt for: benny28dany@gmail.com
+2025-12-02 14:27:23.116 | WARNING  | app:login:187 - ⚠️  [LOGIN] Email not verified: benny28dany@gmail.com
+2025-12-02 14:28:33.710 | INFO     | app:verify_email:294 - 📧 [VERIFY] Email verification request received
+2025-12-02 14:28:33.711 | INFO     | app:verify_email:301 - 🔍 [VERIFY] Looking up user with token: 017875b9...
+2025-12-02 14:28:33.713 | INFO     | app:verify_email:310 - ✅ [VERIFY] User found: benny28dany@gmail.com
+2025-12-02 14:28:33.714 | INFO     | app:verify_email:348 - 📝 [VERIFY] Updating user to verified: benny28dany@gmail.com
+2025-12-02 14:28:33.725 | INFO     | app:verify_email:359 - 🎉 [VERIFY] Email verified successfully for: benny28dany@gmail.com
+2025-12-02 14:31:13.547 | INFO     | app:register:65 - 🔵 [REGISTER] Registration request received for email: benny28dany@gmail.com
+2025-12-02 14:31:13.551 | INFO     | app:register:75 - 🔵 [REGISTER] Email verified status: False
+2025-12-02 14:31:13.552 | INFO     | app:register:76 - 🔵 [REGISTER] Has verification token: True
+2025-12-02 14:31:13.552 | INFO     | app:register:83 - 🔍 [REGISTER] Checking if user exists: benny28dany@gmail.com
+2025-12-02 14:31:13.555 | WARNING  | app:register:86 - ⚠️  [REGISTER] User already exists: benny28dany@gmail.com
+2025-12-02 19:26:11.916 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:26:11.937 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:26:11.942 | INFO     | app:create_goal:493 - 🎯 [GOALS] Creating goal for user: benny28dany@gmail.com
+2025-12-02 19:26:12.099 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:26:12.106 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:48.417 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:48.418 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:48.418 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:27:48.446 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:27:48.457 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:48.457 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:49.606 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:49.606 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:49.606 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:27:49.610 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:27:49.617 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:49.617 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:50.266 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:50.267 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:50.267 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:27:50.271 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:27:50.278 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:50.278 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:57.852 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:57.852 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:27:57.853 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:27:57.855 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:27:57.863 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:27:57.863 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:00.316 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:00.316 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:00.316 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:28:00.319 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:28:00.326 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:00.327 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:02.281 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:02.282 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:02.282 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f75931dd7f52511e8591c for user: benny28dany@gmail.com
+2025-12-02 19:28:02.285 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f75931dd7f52511e8591c updated successfully
+2025-12-02 19:28:02.292 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:02.292 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:22.244 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:22.245 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 19:28:22.266 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 19:28:22.266 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:43:52.886 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:43:52.906 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:43:52.909 | INFO     | app:create_goal:493 - 🎯 [GOALS] Creating goal for user: benny28dany@gmail.com
+2025-12-02 20:43:52.936 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:43:52.938 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:37.233 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:37.233 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:37.233 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f87c81dd7f52511e8591d for user: benny28dany@gmail.com
+2025-12-02 20:44:37.237 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f87c81dd7f52511e8591d updated successfully
+2025-12-02 20:44:37.248 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:37.249 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:38.503 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:38.503 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:38.504 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f87c81dd7f52511e8591d for user: benny28dany@gmail.com
+2025-12-02 20:44:38.507 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f87c81dd7f52511e8591d updated successfully
+2025-12-02 20:44:38.514 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:38.514 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:43.854 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:43.862 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com
+2025-12-02 20:44:43.867 | INFO     | app:update_goal:527 - ✏️ [GOALS] Updating goal 692f87c81dd7f52511e8591d for user: benny28dany@gmail.com
+2025-12-02 20:44:43.886 | INFO     | app:update_goal:577 - ✅ [GOALS] Goal 692f87c81dd7f52511e8591d updated successfully
+2025-12-02 20:44:43.913 | DEBUG    | auth:get_current_user:47 - 🔐 Attempting to authenticate with token: benny28dany@gmail.co...
+2025-12-02 20:44:43.914 | INFO     | auth:get_current_user:51 - ✅ Token is email format, authenticating as: benny28dany@gmail.com

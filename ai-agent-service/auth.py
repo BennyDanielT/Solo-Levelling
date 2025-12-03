@@ -33,18 +33,37 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """Get current user from JWT token"""
+    """Get current user from JWT token or email"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    from loguru import logger
+    
     try:
         token = credentials.credentials
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        logger.debug(f"🔐 Attempting to authenticate with token: {token[:20]}...")
+        
+        # Check if token looks like an email (for OAuth users)
+        if "@" in token and "." in token:
+            logger.info(f"✅ Token is email format, authenticating as: {token}")
+            return {"email": token}
+        
+        # Try to decode as JWT token (for credentials login)
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email: str = payload.get("sub")
+            if email is None:
+                logger.warning("⚠️ Token decoded but no 'sub' field")
+                raise credentials_exception
+            logger.info(f"✅ JWT token authenticated as: {email}")
+            return {"email": email}
+        except JWTError as e:
+            logger.error(f"❌ JWT decode failed: {e}")
             raise credentials_exception
-        return {"email": email}
-    except JWTError:
+            
+    except Exception as e:
+        logger.error(f"❌ Authentication failed: {e}")
         raise credentials_exception

@@ -2,19 +2,41 @@ export interface Goal {
   id: string;
   title: string;
   description: string;
-  category: 'work' | 'personal' | 'health' | 'learning' | 'finance' | 'relationships' | 'other';
+  category: 'productivity' | 'learning' | 'career' | 'fitness' | 'personal';
   priority: 'low' | 'medium' | 'high';
   status: 'active' | 'completed' | 'archived';
   progress: number; // 0-100 percentage
-  targetValue?: number; // optional target for measurable goals
-  currentValue?: number; // optional current progress for measurable goals
-  unit?: string; // unit for measurable goals (e.g., 'hours', 'pages', 'lbs')
-  deadline?: Date;
+  targetDate?: string;
   tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
-  points: number; // points awarded when completed
+  userId: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+export interface DashboardMetrics {
+  totalGoals: number;
+  completedGoals: number;
+  activeGoals: number;
+  completionRate: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  level: number;
+}
+
+export interface CategoryMetrics {
+  category: string;
+  total: number;
+  completed: number;
+  active: number;
+  completionRate: number;
+}
+
+export interface MetricsResponse {
+  overview: DashboardMetrics;
+  categories: CategoryMetrics[];
 }
 
 export interface User {

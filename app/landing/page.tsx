@@ -10,10 +10,11 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (session) {
+    // Only redirect if authenticated (not loading and has session)
+    if (status === 'authenticated' && session) {
       router.push('/dashboard');
     }
-  }, [session, router]);
+  }, [session, status, router]);
 
   if (status === 'loading') {
     return (
@@ -21,6 +22,11 @@ export default function LandingPage() {
         <div className='w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin'></div>
       </div>
     );
+  }
+
+  // If unauthenticated, show the landing page
+  if (status === 'unauthenticated') {
+    // Clear any lingering redirects
   }
 
   return (
@@ -42,7 +48,7 @@ export default function LandingPage() {
           {/* Hero Text */}
           <h1 className='text-6xl md:text-7xl font-bold mb-6'>
             <span className='bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 dark:from-emerald-400 dark:via-cyan-400 dark:to-blue-400 bg-clip-text text-transparent'>
-              Level Up HQ
+              Life Hacker
             </span>
           </h1>
           <p className='text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto'>

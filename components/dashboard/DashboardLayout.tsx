@@ -9,9 +9,10 @@ import { useSession, signOut } from 'next-auth/react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  onAddGoal?: () => void;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,7 +45,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span className='text-xl'>⚡</span>
                 </Link>
                 <h2 className='hidden sm:block text-lg font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent'>
-                  Level Up HQ
+                  Life Hacker
                 </h2>
               </div>
               <div className='flex items-center gap-3'>
@@ -133,7 +134,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {children}
               </div>
             </div>
-            <FloatingQuickPanel />
+            <FloatingQuickPanel onAddGoal={onAddGoal} />
           </main>
         </div>
       </div>

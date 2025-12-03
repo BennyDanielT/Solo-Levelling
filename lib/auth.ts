@@ -43,6 +43,10 @@ export const authOptions: NextAuthOptions = {
 
           if (!res.ok) {
             console.error('Login failed:', data);
+            // Check if it's an email verification error (403 status)
+            if (res.status === 403) {
+              throw new Error('Please verify your email before signing in. Check your inbox for the verification link.');
+            }
             return null;
           }
           

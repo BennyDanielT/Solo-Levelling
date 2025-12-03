@@ -5,8 +5,10 @@ from azure.identity import DefaultAzureCredential
 from datetime import datetime, timedelta
 from bson import ObjectId
 import os
+import sys
 from dotenv import load_dotenv
 import time
+from loguru import logger
 
 from database import (
     db, users_collection, goals_collection, achievements_collection, ping_db
@@ -20,6 +22,17 @@ from models import (
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
 load_dotenv()
+
+# Configure loguru
+logger.remove()  # Remove default handler
+logger.add(
+    sys.stderr,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level="DEBUG",  # Change this: DEBUG (most verbose) | INFO | SUCCESS | WARNING | ERROR | CRITICAL
+    colorize=True
+)
+# Optional: Add file logging
+logger.add("logs/app.log", rotation="500 MB", retention="10 days", level="DEBUG")
 
 app = FastAPI(title="Solo Levelling API")
 
@@ -47,40 +60,66 @@ async def health():
 # ==================== AUTH ROUTES ====================
 
 @app.post("/auth/register", response_model=dict, status_code=201)
-async def register(user: UserRegister):
+async def register(data: dict):
     """Register a new user"""
+    logger.info(f"🔵 [REGISTER] Registration request received for email: {data.get('email')}")
+    
+    email = data.get("email")
+    password = data.get("password")
+    name = data.get("name")
+    username = data.get("username")
+    email_verified = data.get("emailVerified", False)
+    verification_token = data.get("verificationToken")
+    verification_expiry = data.get("verificationExpiry")
+    
+    logger.info(f"🔵 [REGISTER] Email verified status: {email_verified}")
+    logger.info(f"🔵 [REGISTER] Has verification token: {bool(verification_token)}")
+    
+    if not email or not password:
+        logger.error("❌ [REGISTER] Missing email or password")
+        raise HTTPException(status_code=400, detail="Email and password are required")
+    
     # Check if user exists
-    existing_user = await users_collection.find_one({"email": user.email})
+    logger.info(f"🔍 [REGISTER] Checking if user exists: {email}")
+    existing_user = await users_collection.find_one({"email": email})
     if existing_user:
+        logger.warning(f"⚠️  [REGISTER] User already exists: {email}")
         raise HTTPException(
             status_code=400,
             detail="User with this email already exists"
         )
     
-    if user.username:
-        existing_username = await users_collection.find_one({"username": user.username})
+    if username:
+        logger.info(f"🔍 [REGISTER] Checking if username exists: {username}")
+        existing_username = await users_collection.find_one({"username": username})
         if existing_username:
+            logger.warning(f"⚠️  [REGISTER] Username already taken: {username}")
             raise HTTPException(
                 status_code=400,
                 detail="Username is already taken"
             )
     
     # Hash password
-    hashed_password = hash_password(user.password)
+    logger.info("🔐 [REGISTER] Hashing password")
+    hashed_password = hash_password(password)
     
     # Create user document
+    logger.info("📝 [REGISTER] Creating user document")
     user_doc = {
-        "name": user.name,
-        "email": user.email,
-        "username": user.username,
+        "name": name or email.split("@")[0],
+        "email": email,
+        "username": username or email.split("@")[0],
         "password": hashed_password,
-        "image": user.image,
+        "image": None,
         "level": 1,
         "totalPoints": 0,
         "rank": "E",
         "title": "Awakened Hunter",
         "loginPlatform": "email",
         "platformId": None,
+        "emailVerified": email_verified,
+        "verificationToken": verification_token,
+        "verificationExpiry": verification_expiry,
         "joinedAt": datetime.utcnow(),
         "lastActive": datetime.utcnow(),
         "preferences": {
@@ -92,26 +131,30 @@ async def register(user: UserRegister):
     
     result = await users_collection.insert_one(user_doc)
     user_doc["_id"] = str(result.inserted_id)
+    logger.info(f"✅ [REGISTER] User created successfully with ID: {result.inserted_id}")
     
     # Create access token
+    logger.info("🔑 [REGISTER] Creating access token")
     access_token = create_access_token(
-        data={"sub": user.email},
+        data={"sub": email},
         expires_delta=timedelta(days=7)
     )
     
+    logger.info(f"🎉 [REGISTER] Registration complete for: {email}")
     return {
         "success": True,
         "message": "User registered successfully",
         "data": {
             "user": {
                 "id": str(result.inserted_id),
-                "name": user.name,
-                "email": user.email,
-                "username": user.username,
+                "name": name or email.split("@")[0],
+                "email": email,
+                "username": username or email.split("@")[0],
                 "level": 1,
                 "totalPoints": 0,
                 "rank": "E",
-                "title": "Awakened Hunter"
+                "title": "Awakened Hunter",
+                "emailVerified": email_verified
             },
             "token": access_token
         }
@@ -120,10 +163,12 @@ async def register(user: UserRegister):
 @app.post("/auth/login")
 async def login(credentials: dict):
     """Login user"""
+    logger.info(f"🔵 [LOGIN] Login attempt for: {credentials.get('email')}")
     email = credentials.get("email")
     password = credentials.get("password")
     
     if not email or not password:
+        logger.error("❌ [LOGIN] Missing email or password")
         raise HTTPException(
             status_code=422,
             detail="Email and password are required"
@@ -131,12 +176,22 @@ async def login(credentials: dict):
     
     user = await users_collection.find_one({"email": email})
     if not user:
+        logger.warning(f"⚠️  [LOGIN] User not found: {email}")
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password"
         )
     
+    # Check if email is verified (only for email/password users)
+    if user.get("loginPlatform") == "email" and not user.get("emailVerified", False):
+        logger.warning(f"⚠️  [LOGIN] Email not verified: {email}")
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email before signing in. Check your inbox for the verification link."
+        )
+    
     if not verify_password(password, user["password"]):
+        logger.warning(f"⚠️  [LOGIN] Invalid password for: {email}")
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password"
@@ -148,6 +203,7 @@ async def login(credentials: dict):
         {"$set": {"lastActive": datetime.utcnow()}}
     )
     
+    logger.info(f"✅ [LOGIN] Login successful: {email}")
     # Create access token
     access_token = create_access_token(
         data={"sub": email},
@@ -208,6 +264,9 @@ async def oauth_login(data: dict):
         "title": "Awakened Hunter",
         "loginPlatform": provider,
         "platformId": provider_id,
+        "emailVerified": True,  # OAuth emails are pre-verified
+        "verificationToken": None,
+        "verificationExpiry": None,
         "joinedAt": datetime.utcnow(),
         "lastActive": datetime.utcnow(),
         "preferences": {
@@ -227,6 +286,80 @@ async def oauth_login(data: dict):
             "email": email,
             "name": name
         }
+    }
+
+@app.post("/auth/verify-email")
+async def verify_email(data: dict):
+    """Verify user email with token"""
+    logger.info("📧 [VERIFY] Email verification request received")
+    token = data.get("token")
+    
+    if not token:
+        logger.error("❌ [VERIFY] No token provided")
+        raise HTTPException(status_code=400, detail="Verification token is required")
+    
+    logger.info(f"🔍 [VERIFY] Looking up user with token: {token[:8]}...")
+    
+    # Find user with this token
+    user = await users_collection.find_one({"verificationToken": token})
+    
+    if not user:
+        logger.error(f"❌ [VERIFY] No user found with token: {token[:8]}...")
+        raise HTTPException(status_code=404, detail="Invalid verification token")
+    
+    logger.info(f"✅ [VERIFY] User found: {user.get('email')}")
+    
+    # Check if token has expired
+    if user.get("verificationExpiry"):
+        expiry = user["verificationExpiry"]
+        
+        # Convert string to datetime if needed
+        if isinstance(expiry, str):
+            try:
+                from datetime import datetime as dt
+                expiry = dt.fromisoformat(expiry.replace('Z', '+00:00'))
+            except:
+                # If parsing fails, treat as expired
+                logger.error(f"❌ [VERIFY] Invalid verification token format for: {user.get('email')}")
+                raise HTTPException(status_code=400, detail="Invalid verification token format")
+        
+        # Make datetime timezone-aware for comparison
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        
+        # Ensure expiry is timezone-aware
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        
+        # Compare with current time
+        if expiry < now:
+            logger.warning(f"⏰ [VERIFY] Token expired for: {user.get('email')}")
+            raise HTTPException(status_code=400, detail="Verification token has expired")
+    
+    # Check if already verified
+    if user.get("emailVerified"):
+        logger.info(f"ℹ️  [VERIFY] Email already verified for: {user.get('email')}")
+        return {
+            "success": True,
+            "message": "Email already verified"
+        }
+    
+    # Mark email as verified
+    logger.info(f"📝 [VERIFY] Updating user to verified: {user.get('email')}")
+    await users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "emailVerified": True,
+            "verificationToken": None,
+            "verificationExpiry": None,
+            "lastActive": datetime.utcnow()
+        }}
+    )
+    
+    logger.info(f"🎉 [VERIFY] Email verified successfully for: {user.get('email')}")
+    return {
+        "success": True,
+        "message": "Email verified successfully"
     }
 
 # ==================== USER ROUTES ====================
@@ -270,6 +403,69 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
         }
     }
 
+# ==================== METRICS ROUTES ====================
+
+@app.get("/metrics/dashboard")
+async def get_dashboard_metrics(current_user: dict = Depends(get_current_user)):
+    """Get dashboard metrics for current user"""
+    logger.info(f"📊 [METRICS] Fetching dashboard metrics for: {current_user['email']}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_id = str(user["_id"])
+    
+    # Get all goals
+    all_goals = await goals_collection.find({"userId": user_id}).to_list(length=1000)
+    
+    # Calculate overall metrics
+    total_goals = len(all_goals)
+    completed_goals = len([g for g in all_goals if g.get("completed")])
+    active_goals = len([g for g in all_goals if g.get("status") == "active"])
+    completion_rate = (completed_goals / total_goals * 100) if total_goals > 0 else 0
+    
+    # Calculate category metrics
+    categories = ["productivity", "learning", "career", "fitness", "personal"]
+    category_metrics = []
+    
+    for category in categories:
+        cat_goals = [g for g in all_goals if g.get("category") == category]
+        cat_total = len(cat_goals)
+        cat_completed = len([g for g in cat_goals if g.get("completed")])
+        cat_active = len([g for g in cat_goals if g.get("status") == "active"])
+        cat_rate = (cat_completed / cat_total * 100) if cat_total > 0 else 0
+        
+        category_metrics.append({
+            "category": category,
+            "total": cat_total,
+            "completed": cat_completed,
+            "active": cat_active,
+            "completionRate": round(cat_rate, 1)
+        })
+    
+    # Calculate streak (simplified - consecutive days with completed goals)
+    # For now, just return 0 - can be enhanced later with proper date tracking
+    current_streak = 0
+    longest_streak = 0
+    
+    logger.info(f"✅ [METRICS] Metrics calculated successfully")
+    return {
+        "success": True,
+        "data": {
+            "overview": {
+                "totalGoals": total_goals,
+                "completedGoals": completed_goals,
+                "activeGoals": active_goals,
+                "completionRate": round(completion_rate, 1),
+                "currentStreak": current_streak,
+                "longestStreak": longest_streak,
+                "totalPoints": user.get("totalPoints", 0),
+                "level": user.get("level", 1)
+            },
+            "categories": category_metrics
+        }
+    }
+
 # ==================== GOALS ROUTES ====================
 
 @app.get("/goals")
@@ -294,25 +490,22 @@ async def get_goals(current_user: dict = Depends(get_current_user)):
 @app.post("/goals", status_code=201)
 async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current_user)):
     """Create a new goal"""
+    logger.info(f"🎯 [GOALS] Creating goal for user: {current_user['email']}")
     user = await users_collection.find_one({"email": current_user["email"]})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Calculate points if not provided
-    points = goal.points if goal.points else int(goal.weight * 2)
-    
     goal_doc = {
         "title": goal.title,
         "description": goal.description,
-        "weight": goal.weight,
-        "difficulty": goal.difficulty,
-        "points": points,
         "category": goal.category,
         "priority": goal.priority,
+        "targetDate": goal.targetDate,
+        "status": goal.status,
+        "progress": goal.progress,
         "tags": goal.tags,
         "userId": str(user["_id"]),
         "completed": False,
-        "archived": False,
         "createdAt": datetime.utcnow(),
         "completedAt": None,
         "updatedAt": datetime.utcnow()
@@ -329,8 +522,9 @@ async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current
     }
 
 @app.put("/goals/{goal_id}")
-async def update_goal(goal_id: str, completed: bool, current_user: dict = Depends(get_current_user)):
-    """Update goal completion status"""
+async def update_goal(goal_id: str, update_data: dict, current_user: dict = Depends(get_current_user)):
+    """Update goal"""
+    logger.info(f"✏️ [GOALS] Updating goal {goal_id} for user: {current_user['email']}")
     user = await users_collection.find_one({"email": current_user["email"]})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -343,25 +537,44 @@ async def update_goal(goal_id: str, completed: bool, current_user: dict = Depend
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     
-    update_data = {
-        "completed": completed,
+    # Prepare update
+    goal_update = {
         "updatedAt": datetime.utcnow()
     }
     
-    if completed and not goal.get("completed"):
-        update_data["completedAt"] = datetime.utcnow()
-        # Award points
-        points = goal.get("points", 0)
-        await users_collection.update_one(
-            {"_id": user["_id"]},
-            {"$inc": {"totalPoints": points}}
-        )
+    # Handle status/completed changes
+    if "status" in update_data:
+        goal_update["status"] = update_data["status"]
+        if update_data["status"] == "completed":
+            goal_update["completed"] = True
+            goal_update["completedAt"] = datetime.utcnow()
+            goal_update["progress"] = 100
+    
+    if "completed" in update_data and update_data["completed"]:
+        goal_update["completed"] = True
+        goal_update["completedAt"] = datetime.utcnow()
+        goal_update["status"] = "completed"
+        goal_update["progress"] = 100
+    
+    # Handle progress updates
+    if "progress" in update_data:
+        goal_update["progress"] = min(100, max(0, update_data["progress"]))
+        if goal_update["progress"] == 100 and not goal.get("completed"):
+            goal_update["completed"] = True
+            goal_update["completedAt"] = datetime.utcnow()
+            goal_update["status"] = "completed"
+    
+    # Update other fields if provided
+    for field in ["title", "description", "category", "priority", "targetDate", "tags"]:
+        if field in update_data:
+            goal_update[field] = update_data[field]
     
     await goals_collection.update_one(
         {"_id": ObjectId(goal_id)},
-        {"$set": update_data}
+        {"$set": goal_update}
     )
     
+    logger.info(f"✅ [GOALS] Goal {goal_id} updated successfully")
     return {
         "success": True,
         "message": "Goal updated successfully"

@@ -69,11 +69,11 @@ class UserResponse(BaseModel):
 class GoalBase(BaseModel):
     title: str = Field(..., min_length=1)
     description: str = ""
-    weight: float = Field(..., ge=1, le=100)
-    difficulty: str = "medium"
-    points: Optional[int] = None
-    category: Optional[str] = None
-    priority: str = "medium"
+    category: str = Field(..., description="productivity, learning, career, fitness, personal")
+    priority: str = "medium"  # low, medium, high
+    targetDate: Optional[datetime] = None
+    status: str = "active"  # active, completed, archived
+    progress: int = Field(default=0, ge=0, le=100)
     tags: List[str] = []
 
 class GoalCreate(GoalBase):
@@ -83,7 +83,6 @@ class GoalInDB(GoalBase):
     id: str = Field(alias="_id")
     userId: str
     completed: bool = False
-    archived: bool = False
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     completedAt: Optional[datetime] = None
     updatedAt: datetime = Field(default_factory=datetime.utcnow)
@@ -97,10 +96,27 @@ class GoalResponse(GoalBase):
     id: str
     userId: str
     completed: bool
-    archived: bool
     createdAt: datetime
     completedAt: Optional[datetime]
     updatedAt: datetime
+
+# Metrics Models
+class DashboardMetrics(BaseModel):
+    totalGoals: int = 0
+    completedGoals: int = 0
+    activeGoals: int = 0
+    completionRate: float = 0.0
+    currentStreak: int = 0
+    longestStreak: int = 0
+    totalPoints: int = 0
+    level: int = 1
+    
+class CategoryMetrics(BaseModel):
+    category: str
+    total: int = 0
+    completed: int = 0
+    active: int = 0
+    completionRate: float = 0.0
 
 # Achievement Models
 class AchievementBase(BaseModel):

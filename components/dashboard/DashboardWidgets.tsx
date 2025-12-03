@@ -17,29 +17,29 @@ import {
   Legend,
 } from 'recharts';
 
-// Sample data
+// Data will be fetched from database
 const goalProgressData = [
-  { name: 'Mon', completed: 4, total: 6 },
-  { name: 'Tue', completed: 3, total: 5 },
-  { name: 'Wed', completed: 6, total: 7 },
-  { name: 'Thu', completed: 5, total: 6 },
-  { name: 'Fri', completed: 7, total: 8 },
-  { name: 'Sat', completed: 2, total: 3 },
-  { name: 'Sun', completed: 3, total: 4 },
+  { name: 'Mon', completed: 0, total: 0 },
+  { name: 'Tue', completed: 0, total: 0 },
+  { name: 'Wed', completed: 0, total: 0 },
+  { name: 'Thu', completed: 0, total: 0 },
+  { name: 'Fri', completed: 0, total: 0 },
+  { name: 'Sat', completed: 0, total: 0 },
+  { name: 'Sun', completed: 0, total: 0 },
 ];
 
 const categoryData = [
-  { name: 'Work', value: 35, color: '#3b82f6' },      // Modern blue
-  { name: 'Health', value: 25, color: '#10b981' },    // Emerald
-  { name: 'Personal', value: 20, color: '#a855f7' },  // Violet
-  { name: 'Learning', value: 20, color: '#f59e0b' },  // Amber
+  { name: 'Work', value: 0, color: '#3b82f6' },      // Modern blue
+  { name: 'Health', value: 0, color: '#10b981' },    // Emerald
+  { name: 'Personal', value: 0, color: '#a855f7' },  // Violet
+  { name: 'Learning', value: 0, color: '#f59e0b' },  // Amber
 ];
 
 const weeklyStatsData = [
-  { name: 'Week 1', goals: 12, achievements: 8 },
-  { name: 'Week 2', goals: 15, achievements: 11 },
-  { name: 'Week 3', goals: 18, achievements: 14 },
-  { name: 'Week 4', goals: 20, achievements: 16 },
+  { name: 'Week 1', goals: 0, achievements: 0 },
+  { name: 'Week 2', goals: 0, achievements: 0 },
+  { name: 'Week 3', goals: 0, achievements: 0 },
+  { name: 'Week 4', goals: 0, achievements: 0 },
 ];
 
 const chartVariants: Record<string, string> = {
@@ -192,32 +192,32 @@ export function StatsCards() {
     | 'habits'
   >('hero');
 
-  // Hero Metrics (4-8 key metrics shown on landing)
+  // Key Metrics (4-8 key metrics shown on landing)
   const heroMetrics = [
     {
       name: "Today's Focus Time",
-      value: '3h 45m',
+      value: '0h 0m',
       subtext: 'Deep work minutes',
       icon: '⏱️',
       bgColor: '#3b82f6', // modern blue
     },
     {
       name: 'Goals Progress',
-      value: '68%',
+      value: '0%',
       subtext: 'Weekly milestones hit',
       icon: '🎯',
       bgColor: '#a855f7', // violet
     },
     {
       name: 'Streak',
-      value: '12 days',
+      value: '0 days',
       subtext: 'Consecutive action days',
       icon: '🔥',
       bgColor: '#f97316', // orange
     },
     {
       name: 'Content Switches',
-      value: '4',
+      value: '0',
       subtext: 'interactions today',
       icon: '🎨',
       bgColor: '#10b981', // emerald
@@ -227,28 +227,28 @@ export function StatsCards() {
   const goalsMetrics = [
     {
       name: 'Completed Today',
-      value: '3',
+      value: '0',
       subtext: 'goals finished',
       icon: '✅',
       bgColor: '#10b981', // emerald
     },
     {
       name: 'Completed This Week',
-      value: '12',
+      value: '0',
       subtext: 'weekly total',
       icon: '📊',
       bgColor: '#3b82f6', // blue
     },
     {
       name: 'Active Goals',
-      value: '8',
+      value: '0',
       subtext: 'in progress',
       icon: '🎯',
       bgColor: '#a855f7', // violet
     },
     {
       name: 'Stalled Goals',
-      value: '2',
+      value: '0',
       subtext: 'no progress in 5+ days',
       icon: '⏸️',
       bgColor: '#f43f5e', // rose
@@ -259,28 +259,28 @@ export function StatsCards() {
   const productivityMetrics = [
     {
       name: 'Deep Work Today',
-      value: '3h 45m',
+      value: '0h 0m',
       subtext: 'uninterrupted blocks',
       icon: '💼',
       bgColor: '#3b82f6', // blue
     },
     {
       name: 'Planned vs Reactive',
-      value: '75% / 25%',
+      value: '0% / 0%',
       subtext: 'time allocation',
       icon: '⚙️',
       bgColor: '#10b981', // emerald
     },
     {
       name: 'Flow Time',
-      value: '2h 30m',
+      value: '0h 0m',
       subtext: 'high focus periods',
       icon: '✨',
       bgColor: '#a855f7', // violet
     },
     {
       name: 'Top Tasks Done',
-      value: '5',
+      value: '0',
       subtext: 'completed by impact',
       icon: '📝',
       bgColor: '#f59e0b', // amber
@@ -291,21 +291,21 @@ export function StatsCards() {
   const relationshipsMetrics = [
     {
       name: 'Quality Time',
-      value: '2h 15m',
+      value: '0h 0m',
       subtext: 'with loved ones today',
       icon: '❤️',
       bgColor: '#f43f5e', // rose
     },
     {
       name: 'Social Connections',
-      value: '4',
+      value: '0',
       subtext: 'messages/calls this week',
       icon: '💬',
       bgColor: '#f97316', // orange
     },
     {
       name: 'Social Energy',
-      value: '8/10',
+      value: '0/10',
       subtext: 'after interactions',
       icon: '⚡',
       bgColor: '#06b6d4', // cyan
@@ -316,22 +316,22 @@ export function StatsCards() {
   const learningMetrics = [
     {
       name: 'Learning Time',
-      value: '1h 20m',
+      value: '0h 0m',
       subtext: 'focused study today',
       icon: '📚',
       bgColor: '#a855f7', // violet
     },
     {
       name: 'Pages Read',
-      value: '28',
+      value: '0',
       subtext: 'this week',
       icon: '📖',
       bgColor: '#3b82f6', // blue
     },
     {
       name: 'Practice Sessions',
-      value: '3',
-      subtext: 'across 2 skills',
+      value: '0',
+      subtext: 'across 0 skills',
       icon: '🎸',
       bgColor: '#10b981', // emerald
     },
@@ -341,21 +341,21 @@ export function StatsCards() {
   const careerMetrics = [
     {
       name: 'Career Tasks',
-      value: '6/8',
+      value: '0/0',
       subtext: 'completed this week',
       icon: '💡',
       bgColor: '#3b82f6',
     },
     {
       name: 'Impact Score',
-      value: '8/10',
+      value: '0/10',
       subtext: 'weekly career impact',
       icon: '🚀',
       bgColor: '#f59e0b',
     },
     {
       name: 'Learning Progress',
-      value: '45%',
+      value: '0%',
       subtext: 'certification course',
       icon: '🏆',
       bgColor: '#10b981',
@@ -366,14 +366,14 @@ export function StatsCards() {
   const financeMetrics = [
     {
       name: 'Weekly Spending',
-      value: '$248',
-      subtext: 'of $400 budget',
+      value: '$0',
+      subtext: 'of $0 budget',
       icon: '💰',
       bgColor: '#10b981',
     },
     {
       name: 'Savings Rate',
-      value: '32%',
+      value: '0%',
       subtext: 'of monthly income',
       icon: '🏦',
       bgColor: '#3b82f6',
@@ -384,21 +384,21 @@ export function StatsCards() {
   const habitsMetrics = [
     {
       name: 'Sleep Streak',
-      value: '8 days',
+      value: '0 days',
       subtext: '7+ hours each night',
       icon: '😴',
       bgColor: '#a855f7',
     },
     {
       name: 'Workout Streak',
-      value: '5 days',
+      value: '0 days',
       subtext: 'consecutive workouts',
       icon: '💪',
       bgColor: '#f43f5e',
     },
     {
       name: 'Planning Consistency',
-      value: '9/10',
+      value: '0/10',
       subtext: 'days with daily planning',
       icon: '📋',
       bgColor: '#f59e0b',
@@ -445,7 +445,7 @@ export function StatsCards() {
   };
 
   const tabs = [
-    { id: 'hero', label: '🎯 Hero Metrics' },
+    { id: 'hero', label: '🎯 Key Metrics' },
     { id: 'goals', label: '📊 Goals' },
     { id: 'productivity', label: '⚙️ Productivity' },
     { id: 'relationships', label: '❤️ Relationships' },

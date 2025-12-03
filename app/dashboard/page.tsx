@@ -16,95 +16,8 @@ import { useToast } from '@/components/dashboard/ToastSystem';
 import { ThemeButton } from '@/lib/theme/ThemeButton';
 import { Goal } from '@/types';
 
-// Sample goals data
-const sampleGoals: Goal[] = [
-  {
-    id: '1',
-    title: 'Complete React project',
-    description: 'Finish the dashboard project with all features implemented',
-    category: 'work',
-    priority: 'high',
-    status: 'active',
-    progress: 75,
-    targetValue: 100,
-    currentValue: 75,
-    unit: 'percent',
-    deadline: new Date('2025-12-01'),
-    tags: ['react', 'project', 'work'],
-    createdAt: new Date('2025-11-01'),
-    updatedAt: new Date('2025-11-20'),
-    points: 25,
-  },
-  {
-    id: '2',
-    title: 'Exercise 5 days a week',
-    description: 'Maintain regular exercise routine for better health',
-    category: 'health',
-    priority: 'medium',
-    status: 'active',
-    progress: 60,
-    targetValue: 5,
-    currentValue: 3,
-    unit: 'days',
-    deadline: new Date('2025-11-30'),
-    tags: ['health', 'fitness', 'routine'],
-    createdAt: new Date('2025-11-01'),
-    updatedAt: new Date('2025-11-20'),
-    points: 15,
-  },
-  {
-    id: '3',
-    title: 'Read 12 books this year',
-    description: 'Expand knowledge through regular reading',
-    category: 'learning',
-    priority: 'medium',
-    status: 'active',
-    progress: 25,
-    targetValue: 12,
-    currentValue: 3,
-    unit: 'books',
-    deadline: new Date('2025-12-31'),
-    tags: ['reading', 'learning', 'personal-growth'],
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-11-20'),
-    points: 20,
-  },
-  {
-    id: '4',
-    title: 'Save $5000 for emergency fund',
-    description: 'Build financial security with emergency savings',
-    category: 'finance',
-    priority: 'high',
-    status: 'active',
-    progress: 40,
-    targetValue: 5000,
-    currentValue: 2000,
-    unit: 'dollars',
-    deadline: new Date('2026-06-01'),
-    tags: ['finance', 'savings', 'security'],
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-11-20'),
-    points: 30,
-  },
-  {
-    id: '5',
-    title: 'Learn Spanish conversation',
-    description: 'Become conversational in Spanish for travel',
-    category: 'learning',
-    priority: 'low',
-    status: 'completed',
-    progress: 100,
-    targetValue: 1,
-    currentValue: 1,
-    unit: 'level',
-    deadline: new Date('2025-10-01'),
-    tags: ['language', 'spanish', 'travel'],
-    createdAt: new Date('2025-06-01'),
-    updatedAt: new Date('2025-10-01'),
-    completedAt: new Date('2025-10-01'),
-    points: 18,
-  },
-];
+// Goals will be fetched from database
+const sampleGoals: Goal[] = [];
 
 // Main dashboard content component
 function DashboardContent() {
@@ -226,7 +139,7 @@ function DashboardContent() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout onAddGoal={() => setIsAddGoalModalOpen(true)}>
       <div className='space-y-8'>
         {/* Tab Navigation */}
         <div className='border-b border-gray-200 dark:border-white/10'>
