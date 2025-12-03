@@ -127,3 +127,15 @@ docker-compose up --build fastapi
 3. **Ensure ports are free**: 3000, 8000, 8081, 27017
 4. **Restart services**: `docker-compose restart`
 5. **Check FastAPI health**: `curl http://localhost:8000/health`
+
+## Script that does everything!
+./docker-manage.sh start         # Start all services
+./docker-manage.sh stop          # Stop all services
+./docker-manage.sh restart       # Restart services
+./docker-manage.sh logs          # View all logs
+./docker-manage.sh logs fastapi  # View specific service
+./docker-manage.sh status        # Show service status
+./docker-manage.sh rebuild       # Rebuild all
+./docker-manage.sh mongo-shell   # Access MongoDB CLI
+./docker-manage.sh backup        # Backup database
+./docker-manage.sh cleanup       # Full cleanup

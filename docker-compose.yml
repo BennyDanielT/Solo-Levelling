@@ -11,68 +11,53 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USER}", "--password", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      test: ["CMD", "mongo", "--quiet", "--username", "${MONGO_ROOT_USER}", "--password", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     networks:
       - solo-leveling-network
 
-  # mongo-init:
-  #   image: mongo:4.4
-  #   container_name: solo-leveling-mongo-init
-  #   depends_on:
-  #     mongodb:
-  #       condition: service_healthy
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS}
-  #   volumes:
-  #     - ./init-scripts:/docker-entrypoint-initdb.d
-  #   entrypoint: >
-  #     bash -c "
-  #     echo 'Waiting for MongoDB to be ready...' &&
-  #     sleep 5 &&
-  #     mongosh --username ${MONGO_ROOT_USER} --password ${MONGO_ROOT_PASS} --host mongodb /docker-entrypoint-initdb.d/init.js
-  #     "
-  #   networks:
-  #     - solo-leveling-network
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: solo-leveling-mongo-ui
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_URL: "mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/"
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    networks:
+      - solo-leveling-network
 
-  # mongo-express:
-  #   image: mongo-express:1.0.0
-  #   container_name: solo-leveling-mongo-ui
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - mongodb
-  #   environment:
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASS}
-  #     ME_CONFIG_MONGODB_SERVER: mongodb
-  #   ports:
-  #     - "8081:8081"
-  #   networks:
-  #     - solo-leveling-network
-
-  # fastapi:
-  #   build:
-  #     context: ./ai-agent-service
-  #     dockerfile: Dockerfile
-  #   container_name: solo-leveling-fastapi
-  #   restart: unless-stopped
-  #   depends_on:
-  #     mongodb:
-  #       condition: service_healthy
-  #   environment:
-  #     DATABASE_URL: "mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongodb:27017/solo_levelling"
-  #     NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-  #     AZURE_AI_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
-  #     AZURE_EXISTING_AGENT_ID: ${AZURE_EXISTING_AGENT_ID}
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./ai-agent-service:/app
-  #   networks:
-  #     - solo-leveling-network
+  fastapi:
+    build:
+      context: ./ai-agent-service
+      dockerfile: Dockerfile
+    container_name: solo-leveling-fastapi
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/solo_levelling?authSource=admin"
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      AZURE_AI_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT:-}
+      AZURE_EXISTING_AGENT_ID: ${AZURE_EXISTING_AGENT_ID:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai-agent-service:/app
+    networks:
+      - solo-leveling-network
 
   app:
     build:
@@ -81,14 +66,20 @@ services:
       target: dev       # Use the dev stage for hot reload
     container_name: solo-leveling-app
     restart: unless-stopped
-    # depends_on:
-    #   - fastapi
+    depends_on:
+      fastapi:
+        condition: service_started
+      mongodb:
+        condition: service_healthy
     environment:
-      FASTAPI_SERVICE_URL: "http://localhost:8000"
+      FASTAPI_SERVICE_URL: "http://fastapi:8000"
       NODE_ENV: development
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      DATABASE_URL: "mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/solo_levelling?authSource=admin"
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     ports:
       - "3000:3000"
     volumes:
