@@ -52,18 +52,12 @@ export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
                 <ThemeButton />
                 {session ? (
                   <div className='relative' ref={dropdownRef}>
-                    <div className='hidden sm:flex items-center gap-3 pl-3 border-l border-gray-200 dark:border-gray-700'>
-                      <div className='text-right'>
-                        <p className='text-sm font-semibold text-gray-900 dark:text-white'>{session.user?.name || 'User'}</p>
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>{session.user?.email}</p>
-                      </div>
-                      <button
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className='w-9 h-9 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-300 font-bold text-sm'
-                      >
-                        {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className='w-9 h-9 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-300 font-bold text-sm'
+                    >
+                      {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                    </button>
 
                     {/* Dropdown Menu */}
                     {dropdownOpen && (

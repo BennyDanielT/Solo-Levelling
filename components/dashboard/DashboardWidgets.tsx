@@ -179,20 +179,27 @@ export function WeeklyStatsChart() {
   );
 }
 
-// Stats cards component
-export function StatsCards() {
-  const [activeTab, setActiveTab] = useState<
-    | 'hero'
-    | 'goals'
-    | 'productivity'
-    | 'relationships'
-    | 'learning'
-    | 'career'
-    | 'finance'
-    | 'habits'
-  >('hero');
+// Shared MetricCard component
+const MetricCard = ({ name, value, subtext, icon, bgColor }: any) => (
+  <div
+    className='rounded-2xl p-5 text-white shadow-xl border border-white/10'
+    style={{ backgroundColor: bgColor }}
+  >
+    <div className='flex items-start justify-between'>
+      <div className='flex-1'>
+        <p className='text-xs font-medium opacity-90 uppercase tracking-wide'>
+          {name}
+        </p>
+        <p className='text-3xl font-bold mt-2'>{value}</p>
+        <p className='text-xs text-white/80 mt-1'>{subtext}</p>
+      </div>
+      <div className='text-3xl ml-2'>{icon}</div>
+    </div>
+  </div>
+);
 
-  // Key Metrics (4-8 key metrics shown on landing)
+// Key Metrics component (for Overview page center)
+export function StatsCards() {
   const heroMetrics = [
     {
       name: "Today's Focus Time",
@@ -223,7 +230,25 @@ export function StatsCards() {
       bgColor: '#10b981', // emerald
     },
   ];
-  // Goals & Progress Metrics
+
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          🎯 Key Metrics
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+        {heroMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Goals Metrics Component
+export function GoalsMetrics() {
   const goalsMetrics = [
     {
       name: 'Completed Today',
@@ -255,7 +280,24 @@ export function StatsCards() {
     },
   ];
 
-  // Productivity Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          📊 Goals & Progress
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+        {goalsMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Productivity Metrics Component
+export function ProductivityMetrics() {
   const productivityMetrics = [
     {
       name: 'Deep Work Today',
@@ -287,7 +329,24 @@ export function StatsCards() {
     },
   ];
 
-  // Relationships Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          ⚙️ Productivity
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+        {productivityMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Relationships Metrics Component
+export function RelationshipsMetrics() {
   const relationshipsMetrics = [
     {
       name: 'Quality Time',
@@ -312,7 +371,24 @@ export function StatsCards() {
     },
   ];
 
-  // Learning Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          ❤️ Relationships
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {relationshipsMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Learning Metrics Component
+export function LearningMetrics() {
   const learningMetrics = [
     {
       name: 'Learning Time',
@@ -337,7 +413,24 @@ export function StatsCards() {
     },
   ];
 
-  // Career Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          📚 Learning
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {learningMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Career Metrics Component
+export function CareerMetrics() {
   const careerMetrics = [
     {
       name: 'Career Tasks',
@@ -362,7 +455,24 @@ export function StatsCards() {
     },
   ];
 
-  // Finance Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          💼 Career
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {careerMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Finance Metrics Component
+export function FinanceMetrics() {
   const financeMetrics = [
     {
       name: 'Weekly Spending',
@@ -380,7 +490,24 @@ export function StatsCards() {
     },
   ];
 
-  // Habits Metrics
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          💰 Finance
+        </h2>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+        {financeMetrics.map((metric) => (
+          <MetricCard key={metric.name} {...metric} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Habits Metrics Component
+export function HabitsMetrics() {
   const habitsMetrics = [
     {
       name: 'Sleep Streak',
@@ -405,80 +532,15 @@ export function StatsCards() {
     },
   ];
 
-  const MetricCard = ({ name, value, subtext, icon, bgColor }: any) => (
-    <div
-      className='rounded-2xl p-5 text-white shadow-xl border border-white/10'
-      style={{ backgroundColor: bgColor }}
-    >
-      <div className='flex items-start justify-between'>
-        <div className='flex-1'>
-          <p className='text-xs font-medium opacity-90 uppercase tracking-wide'>
-            {name}
-          </p>
-          <p className='text-3xl font-bold mt-2'>{value}</p>
-          <p className='text-xs text-white/80 mt-1'>{subtext}</p>
-        </div>
-        <div className='text-3xl ml-2'>{icon}</div>
-      </div>
-    </div>
-  );
-
-  const getMetricsByTab = () => {
-    switch (activeTab) {
-      case 'goals':
-        return goalsMetrics;
-      case 'productivity':
-        return productivityMetrics;
-      case 'relationships':
-        return relationshipsMetrics;
-      case 'learning':
-        return learningMetrics;
-      case 'career':
-        return careerMetrics;
-      case 'finance':
-        return financeMetrics;
-      case 'habits':
-        return habitsMetrics;
-      default:
-        return heroMetrics;
-    }
-  };
-
-  const tabs = [
-    { id: 'hero', label: '🎯 Key Metrics' },
-    { id: 'goals', label: '📊 Goals' },
-    { id: 'productivity', label: '⚙️ Productivity' },
-    { id: 'relationships', label: '❤️ Relationships' },
-    { id: 'learning', label: '📚 Learning' },
-    { id: 'career', label: '💼 Career' },
-    { id: 'finance', label: '💰 Finance' },
-    { id: 'habits', label: '📋 Habits' },
-  ];
-
-  const metrics = getMetricsByTab();
-
   return (
     <div className='space-y-6'>
-      {/* Tab Navigation */}
-      <div className='flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700/50 pb-4'>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          📋 Habits
+        </h2>
       </div>
-
-      {/* Metrics Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-        {metrics.map((metric) => (
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {habitsMetrics.map((metric) => (
           <MetricCard key={metric.name} {...metric} />
         ))}
       </div>

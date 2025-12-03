@@ -20,6 +20,32 @@ const getAuthToken = (session: any) => {
   return session?.user?.email || '';
 };
 
+// Priority weights for weighted progress calculation
+// Formula: Weighted Progress = Σ(progress × weight) / Σ(weight)
+// High priority goals have 3x impact, Medium 2x, Low 1x
+const PRIORITY_WEIGHTS: Record<string, number> = {
+  high: 3,    // High priority: 3x weight
+  medium: 2,  // Medium priority: 2x weight
+  low: 1,     // Low priority: 1x weight
+};
+
+// Calculate weighted overall progress
+const calculateWeightedProgress = (goals: Goal[]): number => {
+  if (goals.length === 0) return 0;
+  
+  const totalWeightedProgress = goals.reduce((sum, goal) => {
+    const weight = PRIORITY_WEIGHTS[goal.priority] || 1;
+    const progress = goal.progress || 0;
+    return sum + (progress * weight);
+  }, 0);
+  
+  const totalWeight = goals.reduce((sum, goal) => {
+    return sum + (PRIORITY_WEIGHTS[goal.priority] || 1);
+  }, 0);
+  
+  return Math.round(totalWeightedProgress / totalWeight);
+};
+
 const categoryIcons: Record<string, string> = {
   productivity: '⚡',
   learning: '📚',
@@ -56,6 +82,11 @@ export default function GoalsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const { showSuccess, showError } = useToast();
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -128,6 +159,16 @@ export default function GoalsPage() {
     }
   };
 
+  // Filter goals based on search, status, and category
+  const filteredGoals = goals.filter(goal => {
+    const matchesSearch = goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          goal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || goal.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || goal.category === categoryFilter;
+    
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
   if (status === 'loading' || loading) {
     return (
       <DashboardLayout>
@@ -161,7 +202,7 @@ export default function GoalsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-1 md:grid-cols-5 gap-4'>
           <StatCard
             title='Total Goals'
             value={goals.length}
@@ -186,14 +227,84 @@ export default function GoalsPage() {
             icon='📊'
             color='from-orange-500 to-red-500'
           />
+          <StatCard
+            title='Overall Progress'
+            value={`${calculateWeightedProgress(goals)}%`}
+            icon='📈'
+            color='from-pink-500 to-rose-500'
+          />
+        </div>
+
+        {/* Filters */}
+        <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            {/* Search */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                Search
+              </label>
+              <input
+                type='text'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder='Search goals...'
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+              >
+                <option value='all'>All Status</option>
+                <option value='active'>Active</option>
+                <option value='completed'>Completed</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                Category
+              </label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+              >
+                <option value='all'>All Categories</option>
+                <option value='productivity'>Productivity</option>
+                <option value='learning'>Learning</option>
+                <option value='career'>Career</option>
+                <option value='fitness'>Fitness</option>
+                <option value='personal'>Personal</option>
+                <option value='work'>Work</option>
+                <option value='health'>Health</option>
+                <option value='finance'>Finance</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Goals List */}
-        {goals.length === 0 ? (
+        {filteredGoals.length === 0 ? (
           <div className='bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-lg border border-gray-200 dark:border-gray-700'>
             <Target className='w-16 h-16 mx-auto mb-4 text-gray-400' />
-            <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-2'>No goals yet</h3>
-            <p className='text-gray-600 dark:text-gray-400 mb-6'>Start your journey by creating your first goal!</p>
+            <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-2'>
+              {goals.length === 0 ? 'No goals yet' : 'No goals match your filters'}
+            </h3>
+            <p className='text-gray-600 dark:text-gray-400 mb-6'>
+              {goals.length === 0 
+                ? 'Start your journey by creating your first goal!'
+                : 'Try adjusting your filters or create a new goal.'
+              }
+            </p>
             <button
               onClick={() => setIsModalOpen(true)}
               className='inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-200 shadow-lg'
@@ -204,7 +315,7 @@ export default function GoalsPage() {
           </div>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {goals.map((goal) => (
+            {filteredGoals.map((goal) => (
               <GoalCard
                 key={goal.id}
                 goal={goal}
