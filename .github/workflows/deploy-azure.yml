@@ -1,0 +1,153 @@
+name: Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  CONTAINER_APP_ENVIRONMENT: ${{ secrets.AZURE_CONTAINER_APP_ENVIRONMENT }}
+  LOCATION: canadaeast
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push MongoDB image
+        run: |
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }} -f Dockerfile.mongodb .
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }}
+          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+
+      - name: Build and push FastAPI image
+        run: |
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }} -f Dockerfile.fastapi ./ai-agent-service
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
+          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+
+      - name: Build and push Next.js image
+        run: |
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }} -f Dockerfile .
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
+          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Deploy MongoDB
+            az containerapp create \
+              --name solo-leveling-mongodb \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ secrets.AZURE_CONTAINER_APP_ENVIRONMENT }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest \
+              --target-port 27017 \
+              --ingress internal \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --cpu 1.0 \
+              --memory 2Gi \
+              --env-vars \
+                MONGO_INITDB_ROOT_USERNAME=secretFrom=${{ secrets.MONGO_ROOT_USERNAME }} \
+                MONGO_INITDB_ROOT_PASSWORD=secretFrom=${{ secrets.MONGO_ROOT_PASSWORD }} \
+                MONGO_INITDB_DATABASE=solo_leveling \
+              --registry-server ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }} || \
+            az containerapp update \
+              --name solo-leveling-mongodb \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+
+            # Deploy FastAPI
+            az containerapp create \
+              --name solo-leveling-fastapi \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ secrets.AZURE_CONTAINER_APP_ENVIRONMENT }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest \
+              --target-port 8000 \
+              --ingress internal \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --env-vars \
+                MONGODB_URL=secretFrom=${{ secrets.MONGODB_URL }} \
+                JWT_SECRET=secretFrom=${{ secrets.JWT_SECRET }} \
+                GOOGLE_CLIENT_ID=secretFrom=${{ secrets.GOOGLE_CLIENT_ID }} \
+                GOOGLE_CLIENT_SECRET=secretFrom=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+                NEWS_API_KEY=secretFrom=${{ secrets.NEWS_API_KEY }} \
+                NEXTAUTH_URL=secretFrom=${{ secrets.NEXTAUTH_URL }} \
+              --registry-server ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }} || \
+            az containerapp update \
+              --name solo-leveling-fastapi \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+
+            # Get FastAPI internal URL
+            FASTAPI_URL=$(az containerapp show \
+              --name solo-leveling-fastapi \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --query properties.configuration.ingress.fqdn \
+              -o tsv)
+
+            # Deploy Next.js
+            az containerapp create \
+              --name solo-leveling-nextjs \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ secrets.AZURE_CONTAINER_APP_ENVIRONMENT }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 5 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --env-vars \
+                NEXTAUTH_SECRET=secretFrom=${{ secrets.NEXTAUTH_SECRET }} \
+                NEXTAUTH_URL=secretFrom=${{ secrets.NEXTAUTH_URL }} \
+                GOOGLE_CLIENT_ID=secretFrom=${{ secrets.GOOGLE_CLIENT_ID }} \
+                GOOGLE_CLIENT_SECRET=secretFrom=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+                NEXT_PUBLIC_FASTAPI_URL=https://${FASTAPI_URL} \
+                FASTAPI_SERVICE_URL=https://${FASTAPI_URL} \
+              --registry-server ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }} || \
+            az containerapp update \
+              --name solo-leveling-nextjs \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+
+      - name: Get Application URL
+        run: |
+          APP_URL=$(az containerapp show \
+            --name solo-leveling-nextjs \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)
+          echo "🚀 Application deployed successfully!"
+          echo "🌐 Application URL: https://${APP_URL}"
