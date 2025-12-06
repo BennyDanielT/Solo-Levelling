@@ -4,12 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+# Try MONGODB_URL first (Azure), fall back to DATABASE_URL (local)
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
+if not MONGODB_URL:
+    raise ValueError("MONGODB_URL or DATABASE_URL environment variable is not set")
 
 # Create MongoDB client
-client = AsyncIOMotorClient(DATABASE_URL)
+client = AsyncIOMotorClient(MONGODB_URL)
 db = client.solo_levelling
 
 # Collections
