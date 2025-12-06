@@ -83,3 +83,6 @@ mongo-data/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+#documents
+/documents/AZURE_DEPLOYMENT.md
+/documents/Setup-EnvGH.md
