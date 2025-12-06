@@ -105,7 +105,7 @@ jobs:
               az containerapp update \
                 --name solo-leveling-mongodb \
                 --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }}
             fi
 
             # Deploy FastAPI
@@ -137,7 +137,7 @@ jobs:
               az containerapp update \
                 --name solo-leveling-fastapi \
                 --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
             fi
 
             # Get FastAPI internal URL
@@ -176,7 +176,7 @@ jobs:
               az containerapp update \
                 --name solo-leveling-nextjs \
                 --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
             fi
 
       - name: Get Application URL
