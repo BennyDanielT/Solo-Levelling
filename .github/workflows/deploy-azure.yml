@@ -31,27 +31,44 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push MongoDB image
-        run: |
-          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }} -f Dockerfile.mongodb .
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }}
-          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.mongodb
+          push: true
+          tags: |
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }}
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
+          cache-to: type=inline
 
       - name: Build and push FastAPI image
-        run: |
-          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }} -f Dockerfile.fastapi ./ai-agent-service
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
-          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-agent-service
+          file: Dockerfile.fastapi
+          push: true
+          tags: |
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
+          cache-to: type=inline
 
       - name: Build and push Next.js image
-        run: |
-          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }} -f Dockerfile .
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
-          docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }} ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
+            ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
+          cache-to: type=inline
 
       - name: Deploy to Azure Container Apps
         uses: azure/CLI@v1
