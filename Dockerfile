@@ -30,6 +30,11 @@ FROM base AS builder
 # Copy source code
 COPY . .
 
+# Set dummy env vars for build (real ones injected at runtime)
+ENV RESEND_API_KEY=re_dummy_key_for_build
+ENV NEXTAUTH_SECRET=dummy_secret_for_build
+ENV NEXTAUTH_URL=http://localhost:3000
+
 # Build Next.js app
 RUN npm run build
 
