@@ -48,6 +48,10 @@ ENV/
 env/
 .venv
 pip-log.txt
+*.log
+logs/
+ai-agent-service/logs/
+ai-agent-service/*.log
 pip-delete-this-directory.txt
 .pytest_cache/
 .coverage
