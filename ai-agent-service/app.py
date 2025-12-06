@@ -43,7 +43,13 @@ app = FastAPI(title="Solo Levelling API")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://dash.maxeffortgazette.com",
+        "https://cloud.maxeffortgazette.com",
+        "https://solo-leveling-nextjs.mangorock-6ee33a5b.canadaeast.azurecontainerapps.io"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
