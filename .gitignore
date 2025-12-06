@@ -31,6 +31,11 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.azure
+.env.production
+
+# Azure deployment files (keep templates, ignore filled versions)
+.azure/
 
 # Python backend
 __pycache__/
