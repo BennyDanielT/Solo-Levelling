@@ -29,6 +29,26 @@ const PRIORITY_WEIGHTS: Record<string, number> = {
   low: 1,     // Low priority: 1x weight
 };
 
+// Calculate stall rate (goals with no progress in 5+ days)
+const calculateStallRate = (goals: Goal[]): number => {
+  if (goals.length === 0) return 0;
+  
+  const activeGoals = goals.filter(g => g.status === 'active');
+  if (activeGoals.length === 0) return 0;
+  
+  const now = new Date();
+  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+  
+  const stalledGoals = activeGoals.filter(goal => {
+    // Check if goal has updatedAt field
+    if (!goal.updatedAt) return false;
+    const lastUpdate = new Date(goal.updatedAt);
+    return lastUpdate < fiveDaysAgo;
+  });
+  
+  return Math.round((stalledGoals.length / activeGoals.length) * 100);
+};
+
 // Calculate weighted overall progress
 const calculateWeightedProgress = (goals: Goal[]): number => {
   if (goals.length === 0) return 0;
@@ -202,7 +222,7 @@ export default function GoalsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className='grid grid-cols-1 md:grid-cols-5 gap-4'>
+        <div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
           <StatCard
             title='Total Goals'
             value={goals.length}
@@ -226,6 +246,13 @@ export default function GoalsPage() {
             value={`${goals.length > 0 ? Math.round((goals.filter(g => g.status === 'completed').length / goals.length) * 100) : 0}%`}
             icon='📊'
             color='from-orange-500 to-red-500'
+          />
+          <StatCard
+            title='Stall Rate'
+            value={`${calculateStallRate(goals)}%`}
+            icon='⏸️'
+            color='from-red-500 to-rose-500'
+            subtitle='No progress in 5+ days'
           />
           <StatCard
             title='Overall Progress'
@@ -356,9 +383,10 @@ interface StatCardProps {
   value: number | string;
   icon: string;
   color: string;
+  subtitle?: string;
 }
 
-function StatCard({ title, value, icon, color }: StatCardProps) {
+function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
   return (
     <div className='bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700'>
       <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br ${color} rounded-xl mb-4`}>
@@ -366,6 +394,9 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
       </div>
       <h3 className='text-sm font-medium text-gray-600 dark:text-gray-400 mb-1'>{title}</h3>
       <p className='text-3xl font-bold text-gray-900 dark:text-white'>{value}</p>
+      {subtitle && (
+        <p className='text-xs text-gray-500 dark:text-gray-500 mt-1'>{subtitle}</p>
+      )}
     </div>
   );
 }

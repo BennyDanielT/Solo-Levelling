@@ -95,7 +95,7 @@ jobs:
               --memory 1Gi \
               --env-vars \
                 MONGODB_URL=secretFrom=${{ secrets.MONGODB_URL }} \
-                JWT_SECRET=secretFrom=${{ secrets.JWT_SECRET }} \
+                NEXTAUTH_SECRET=secretFrom=${{ secrets.NEXTAUTH_SECRET }} \
                 GOOGLE_CLIENT_ID=secretFrom=${{ secrets.GOOGLE_CLIENT_ID }} \
                 GOOGLE_CLIENT_SECRET=secretFrom=${{ secrets.GOOGLE_CLIENT_SECRET }} \
                 NEWS_API_KEY=secretFrom=${{ secrets.NEWS_API_KEY }} \

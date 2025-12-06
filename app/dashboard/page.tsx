@@ -6,10 +6,6 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import {
   StatsCards,
-  GoalProgressChart,
-  CategoryBreakdownChart,
-  WeeklyStatsChart,
-  GoalsMetrics,
   ProductivityMetrics,
   RelationshipsMetrics,
   LearningMetrics,
@@ -17,57 +13,106 @@ import {
   FinanceMetrics,
   HabitsMetrics,
 } from '@/components/dashboard/DashboardWidgets';
-import { AddGoalModal } from '@/components/dashboard/AddGoalModal';
 import { useToast } from '@/components/dashboard/ToastSystem';
 import { ThemeButton } from '@/lib/theme/ThemeButton';
-import { Goal } from '@/types';
-
-// Goals will be fetched from database
-const sampleGoals: Goal[] = [];
 
 // Main dashboard content component
 function DashboardContent() {
-  const [goals, setGoals] = useState<Goal[]>(sampleGoals);
-  const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
+  const { data: session } = useSession();
   const [news, setNews] = useState<any[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'overview' | 'goals' | 'productivity' | 'relationships' | 'learning' | 'career' | 'finance' | 'habits'>('overview');
+  const [newsCategories, setNewsCategories] = useState<string[]>([]);
+  const [subscribedCategories, setSubscribedCategories] = useState<string[]>([]);
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('feed'); // 'feed' or specific category
+  const [activeSection, setActiveSection] = useState<'overview' | 'productivity' | 'relationships' | 'learning' | 'career' | 'finance' | 'habits' | 'news'>('overview');
   const [stocks, setStocks] = useState<any[]>([]);
   const [stocksLoading, setStocksLoading] = useState(true);
   const [searchSymbol, setSearchSymbol] = useState('');
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'GOOGL', 'MSFT', 'TSLA']);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
   const { showSuccess } = useToast();
 
-  // Fetch latest news on component mount
+  // Helper to get auth token
+  const getAuthToken = () => {
+    // Try localStorage first (for email/password login)
+    const localToken = localStorage.getItem('token');
+    if (localToken) {
+      console.log('✅ Using token from localStorage');
+      return localToken;
+    }
+    
+    // Try session accessToken (for OAuth login)
+    if (session && (session as any).accessToken) {
+      console.log('✅ Using token from session');
+      return (session as any).accessToken;
+    }
+    
+    // If no token but session exists, need to login via credentials to get JWT
+    if (session?.user?.email && !localToken) {
+      console.warn('⚠️ Session exists but no JWT token. You may need to sign in again with email/password to get API token.');
+    }
+    
+    return null;
+  };
+
+  // Sync session access token to localStorage
+  useEffect(() => {
+    if (session && (session as any).accessToken) {
+      const token = (session as any).accessToken;
+      console.log('💾 Syncing session token to localStorage');
+      localStorage.setItem('token', token);
+    } else if (session?.user?.email) {
+      console.log('📧 Session user:', session.user.email);
+      console.log('🔍 Full session object:', JSON.stringify(session, null, 2));
+      console.log('⚠️ No accessToken in session - OAuth login may not have returned a JWT token');
+    }
+  }, [session]);
+
+  // Fetch news from backend API
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        // Using gnews.io API (free, no API key required for basic usage)
-        const response = await fetch(
-          'https://gnews.io/api/v4/top-headlines?lang=en&max=3&apikey=demo' // Using demo key, replace with real key
-        );
+        setNewsLoading(true);
+        const token = getAuthToken();
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch news');
+        if (!token) {
+          console.log('⚠️ No auth token - skipping news fetch');
+          setNewsLoading(false);
+          return;
         }
         
-        const data = await response.json();
-        setNews(data.articles || []);
+        console.log('📰 Fetching news with token');
+
+        // Fetch available categories
+        const categoriesResponse = await fetch('http://localhost:8000/news/categories', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const categoriesData = await categoriesResponse.json();
+        if (categoriesData.success) {
+          setNewsCategories(categoriesData.data.categories || []);
+        }
+
+        // Fetch user's news preferences
+        const preferencesResponse = await fetch('http://localhost:8000/news/preferences', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const preferencesData = await preferencesResponse.json();
+        if (preferencesData.success) {
+          setSubscribedCategories(preferencesData.data.subscribedCategories || []);
+        }
+
+        // Fetch personalized news feed
+        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const feedData = await feedResponse.json();
+        
+        if (feedData.success) {
+          setNews(feedData.data.articles || []);
+        }
       } catch (error) {
         console.error('Error fetching news:', error);
-        // Fallback news if API fails
-        setNews([
-          {
-            title: 'Global Markets Show Strong Recovery',
-            description: 'Stock markets worldwide continue upward trend...',
-            url: '#',
-          },
-          {
-            title: 'Tech Innovation Reaches New Heights',
-            description: 'AI and machine learning reshape industries...',
-            url: '#',
-          },
-        ]);
       } finally {
         setNewsLoading(false);
       }
@@ -76,53 +121,38 @@ function DashboardContent() {
     fetchNews();
   }, []);
 
-  // Fetch stock data
+  // Fetch stock data from backend API
   useEffect(() => {
     const fetchStocks = async () => {
       try {
         setStocksLoading(true);
-        const stockPromises = watchlist.map(async (symbol) => {
-          try {
-            // Try Yahoo Finance API with no-cors (will use mock data due to CORS restrictions)
-            // In production, you should use a backend proxy or paid API service
-            const response = await fetch(
-              `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
-              { mode: 'no-cors' }
-            );
-            
-            // Since no-cors blocks reading response, we'll throw to use mock data
-            throw new Error('Using mock data due to CORS');
-          } catch (error) {
-            // Mock data (Yahoo Finance API blocked by CORS)
-            // To use real data, implement a backend proxy or use services like:
-            // - Alpha Vantage (free tier available)
-            // - Finnhub.io (free tier available)
-            // - IEX Cloud (free tier available)
-            const mockPrices: any = {
-              AAPL: { name: 'Apple Inc.', price: 195.71, change: 2.34, changePercent: 1.21 },
-              GOOGL: { name: 'Alphabet Inc.', price: 142.68, change: 1.23, changePercent: 0.87 },
-              MSFT: { name: 'Microsoft Corp.', price: 384.47, change: 3.56, changePercent: 0.93 },
-              TSLA: { name: 'Tesla Inc.', price: 248.98, change: -2.15, changePercent: -0.86 },
-              AMZN: { name: 'Amazon.com Inc.', price: 151.94, change: 1.87, changePercent: 1.24 },
-              META: { name: 'Meta Platforms', price: 338.12, change: 4.23, changePercent: 1.27 },
-              NVDA: { name: 'NVIDIA Corp.', price: 495.22, change: 8.45, changePercent: 1.74 },
-              NFLX: { name: 'Netflix Inc.', price: 438.65, change: -3.21, changePercent: -0.73 },
-            };
-            
-            const mock = mockPrices[symbol] || { name: symbol, price: 0, change: 0, changePercent: 0 };
-            return {
-              symbol,
-              name: mock.name,
-              price: mock.price.toFixed(2),
-              change: mock.change.toFixed(2),
-              changePercent: mock.changePercent.toFixed(2),
-              currency: 'USD',
-            };
-          }
-        });
+        const token = getAuthToken();
         
-        const stockData = await Promise.all(stockPromises);
-        setStocks(stockData);
+        if (!token) {
+          console.log('⚠️ No auth token - skipping stocks fetch');
+          setStocksLoading(false);
+          return;
+        }
+        
+        console.log('📈 Fetching stocks with token');
+
+        // Fetch watchlist from backend
+        const response = await fetch('http://localhost:8000/stocks/watchlist', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch watchlist');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          setWatchlist(data.data.watchlist || []);
+          setStocks(data.data.quotes || []);
+        }
       } catch (error) {
         console.error('Error fetching stocks:', error);
       } finally {
@@ -134,96 +164,213 @@ function DashboardContent() {
     // Refresh every 60 seconds
     const interval = setInterval(fetchStocks, 60000);
     return () => clearInterval(interval);
-  }, [watchlist]);
+  }, []);
 
-  const handleAddStock = () => {
-    const symbol = searchSymbol.toUpperCase().trim();
-    if (symbol && !watchlist.includes(symbol)) {
-      setWatchlist([...watchlist, symbol]);
-      setSearchSymbol('');
-      showSuccess('Stock Added', `${symbol} added to your watchlist`);
-    }
-  };
+  // Search stocks as user types
+  useEffect(() => {
+    const searchStocks = async () => {
+      if (searchSymbol.length < 1) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+        return;
+      }
 
-  const handleRemoveStock = (symbol: string) => {
-    setWatchlist(watchlist.filter(s => s !== symbol));
-    showSuccess('Stock Removed', `${symbol} removed from watchlist`);
-  };
+      try {
+        const token = getAuthToken();
+        if (!token) return;
 
-  const handleAddGoal = (
-    goalData: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>,
-  ) => {
-    const newGoal: Goal = {
-      ...goalData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+        console.log('🔍 Searching for:', searchSymbol);
+        const response = await fetch(`http://localhost:8000/stocks/search/${searchSymbol}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setSearchResults(data.data || []);
+          setShowSearchResults(true);
+        }
+      } catch (error) {
+        console.error('Error searching stocks:', error);
+      }
     };
 
-    setGoals((prev) => [...prev, newGoal]);
-    showSuccess(
-      'Goal Created!',
-      `Successfully added "${newGoal.title}" to your goals.`,
-    );
-  };
+    const timer = setTimeout(searchStocks, 300); // Debounce
+    return () => clearTimeout(timer);
+  }, [searchSymbol]);
 
-  const handleEditGoal = (goal: Goal) => {
-    // TODO: Implement edit functionality
-    showSuccess('Edit Goal', 'Edit functionality coming soon!');
-  };
+  const handleAddStock = async (symbolToAdd?: string) => {
+    const symbol = (symbolToAdd || searchSymbol).toUpperCase().trim();
+    if (!symbol) return;
 
-  const handleDeleteGoal = (goalId: string) => {
-    const goal = goals.find((g) => g.id === goalId);
-    setGoals((prev) => prev.filter((g) => g.id !== goalId));
-    showSuccess(
-      'Goal Deleted',
-      `"${goal?.title}" has been removed from your goals.`,
-    );
-  };
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showSuccess('Error', 'Please log in to add stocks');
+        return;
+      }
 
-  const handleToggleGoal = (goalId: string) => {
-    setGoals((prev) =>
-      prev.map((goal) => {
-        if (goal.id === goalId) {
-          const newStatus =
-            goal.status === 'completed' ? 'active' : 'completed';
-          const updates: Partial<Goal> = {
-            status: newStatus,
-            progress: newStatus === 'completed' ? 100 : goal.progress,
-            updatedAt: new Date().toISOString(),
-          };
+      console.log('➕ Adding stock:', symbol);
 
-          if (newStatus === 'completed') {
-            updates.completedAt = new Date().toISOString();
-          }
+      const response = await fetch('http://localhost:8000/stocks/watchlist/add', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ symbol }),
+      });
 
-          return { ...goal, ...updates };
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (data.success) {
+        // Refresh stocks to get updated watchlist and quotes
+        const watchlistResponse = await fetch('http://localhost:8000/stocks/watchlist', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const watchlistData = await watchlistResponse.json();
+        
+        if (watchlistData.success) {
+          setWatchlist(watchlistData.data.watchlist || []);
+          setStocks(watchlistData.data.quotes || []);
         }
-        return goal;
-      }),
-    );
-
-    const goal = goals.find((g) => g.id === goalId);
-    if (goal?.status !== 'completed') {
-      showSuccess(
-        'Goal Completed! 🎉',
-        `Congratulations on completing "${goal?.title}"!`,
-      );
+        
+        setSearchSymbol('');
+        setShowSearchResults(false);
+        showSuccess('Stock Added', `${symbol} added to your watchlist`);
+      } else {
+        showSuccess('Error', data.message || data.detail || 'Failed to add stock');
+      }
+    } catch (error) {
+      console.error('Error adding stock:', error);
+      showSuccess('Error', 'Failed to add stock. Please try again.');
     }
   };
 
-  const handleUpdateProgress = (goalId: string, progress: number) => {
-    setGoals((prev) =>
-      prev.map((goal) =>
-        goal.id === goalId
-          ? { ...goal, progress, updatedAt: new Date().toISOString() }
-          : goal,
-      ),
-    );
+  const handleRemoveStock = async (symbol: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
+      console.log('➖ Removing stock:', symbol);
+
+      const response = await fetch(`http://localhost:8000/stocks/watchlist/${symbol}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setWatchlist(data.data.watchlist || []);
+        setStocks(stocks.filter(s => s.symbol !== symbol));
+        showSuccess('Stock Removed', `${symbol} removed from watchlist`);
+      }
+    } catch (error) {
+      console.error('Error removing stock:', error);
+      showSuccess('Error', 'Failed to remove stock');
+    }
+  };
+
+  const handleSubscribeToCategory = async (category: string) => {
+    try {
+      const token = getAuthToken();
+      console.log('📰 Subscribing to category:', category);
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:8000/news/subscribe/${category}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSubscribedCategories(data.data.subscribedCategories || []);
+        showSuccess('Subscribed', `You are now subscribed to ${category} news`);
+        
+        // Refresh news feed
+        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const feedData = await feedResponse.json();
+        if (feedData.success) {
+          setNews(feedData.data.articles || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error subscribing to category:', error);
+    }
+  };
+
+  const handleUnsubscribeFromCategory = async (category: string) => {
+    try {
+      const token = getAuthToken();
+      console.log('📰 Unsubscribing from category:', category);
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:8000/news/unsubscribe/${category}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSubscribedCategories(data.data.subscribedCategories || []);
+        showSuccess('Unsubscribed', `You have unsubscribed from ${category} news`);
+        
+        // Refresh news feed
+        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const feedData = await feedResponse.json();
+        if (feedData.success) {
+          setNews(feedData.data.articles || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error unsubscribing from category:', error);
+    }
+  };
+
+  const handleFetchNewsByCategory = async (category: string) => {
+    try {
+      setNewsLoading(true);
+      setSelectedNewsCategory(category);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      let response;
+      if (category === 'feed') {
+        // Fetch personalized feed
+        response = await fetch('http://localhost:8000/news/feed', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+      } else {
+        // Fetch specific category
+        response = await fetch(`http://localhost:8000/news/category/${category}?limit=20`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setNews(data.data.articles || []);
+      }
+    } catch (error) {
+      console.error('Error fetching news by category:', error);
+    } finally {
+      setNewsLoading(false);
+    }
   };
 
   return (
-    <DashboardLayout onAddGoal={() => setIsAddGoalModalOpen(true)}>
+    <DashboardLayout onAddGoal={() => {}}>
       <div className='space-y-8'>
         {/* Section Navigation */}
         <div className='bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-lg p-2'>
@@ -237,16 +384,6 @@ function DashboardContent() {
               }`}
             >
               🎯 Overview
-            </button>
-            <button
-              onClick={() => setActiveSection('goals')}
-              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                activeSection === 'goals'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
-                  : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
-              }`}
-            >
-              📊 Goals
             </button>
             <button
               onClick={() => setActiveSection('productivity')}
@@ -308,6 +445,16 @@ function DashboardContent() {
             >
               📋 Habits
             </button>
+            <button
+              onClick={() => setActiveSection('news')}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                activeSection === 'news'
+                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
+              }`}
+            >
+              📰 News
+            </button>
           </div>
         </div>
 
@@ -329,13 +476,32 @@ function DashboardContent() {
                 </div>
                 <div>
                   <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 dark:from-emerald-400 dark:via-cyan-400 dark:to-blue-400 bg-clip-text text-transparent'>
-                    Today's Headlines
+                    News Headlines
                   </h1>
                   <p className='text-sm text-gray-500 dark:text-gray-400'>
                     {newsLoading ? 'Loading latest news...' : 'Stay informed with global updates'}
                   </p>
                 </div>
               </div>
+              
+              {/* Category Selector */}
+              {newsCategories.length > 0 && (
+                <div className='flex items-center gap-2'>
+                  <label className='text-sm text-gray-600 dark:text-gray-400'>Category:</label>
+                  <select
+                    value={selectedNewsCategory}
+                    onChange={(e) => handleFetchNewsByCategory(e.target.value)}
+                    className='px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
+                  >
+                    <option value="feed">My Feed</option>
+                    {newsCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
               
             {/* News Headlines Carousel */}
@@ -370,28 +536,63 @@ function DashboardContent() {
             {/* Stock Market Tracker */}
             <div className='mt-6 space-y-4'>
               {/* Add Stock Search */}
-              <div className='flex gap-2'>
-                <input
-                  type='text'
-                  value={searchSymbol}
-                  onChange={(e) => setSearchSymbol(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddStock()}
-                  placeholder='Enter stock symbol (e.g., AAPL, GOOGL)'
-                  className='flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
-                />
-                <button
-                  onClick={handleAddStock}
-                  className='px-6 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200'
-                >
-                  + Add Stock
-                </button>
+              <div className='relative'>
+                <div className='flex gap-2'>
+                  <div className='flex-1 relative'>
+                    <input
+                      type='text'
+                      value={searchSymbol}
+                      onChange={(e) => setSearchSymbol(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddStock()}
+                      onFocus={() => searchSymbol && setShowSearchResults(true)}
+                      onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                      placeholder='Search stocks (e.g., AAPL, Apple, Microsoft)'
+                      className='w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+                    />
+                    
+                    {/* Search Results Dropdown */}
+                    {showSearchResults && searchResults.length > 0 && (
+                      <div className='absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto z-50'>
+                        {searchResults.map((result, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleAddStock(result.symbol)}
+                            className='w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0'
+                          >
+                            <div className='font-semibold text-gray-900 dark:text-white'>
+                              {result.symbol}
+                            </div>
+                            <div className='text-sm text-gray-600 dark:text-gray-400 truncate'>
+                              {result.name}
+                            </div>
+                            {result.exchange && (
+                              <div className='text-xs text-gray-500 dark:text-gray-500 mt-1'>
+                                {result.exchange}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleAddStock()}
+                    className='px-6 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200'
+                  >
+                    + Add
+                  </button>
+                </div>
               </div>
               
               {/* Stock Cards */}
               {stocksLoading ? (
                 <div className='text-center text-gray-500 dark:text-gray-400 py-8'>
-                  <div>Loading stock data...</div>
-                  <div className='text-xs mt-2'>Using demo data (Yahoo Finance blocked by CORS)</div>
+                  <div>Loading stock data from backend...</div>
+                </div>
+              ) : stocks.length === 0 ? (
+                <div className='text-center text-gray-500 dark:text-gray-400 py-8'>
+                  <div>No stocks in watchlist</div>
+                  <div className='text-xs mt-2'>Add stocks using the search above</div>
                 </div>
               ) : (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
@@ -433,23 +634,6 @@ function DashboardContent() {
 
         {/* Stats Overview */}
         <StatsCards />
-
-        {/* Charts Grid */}
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-          <GoalProgressChart />
-          <CategoryBreakdownChart />
-        </div>
-
-        <div className='grid grid-cols-1 lg:grid-cols-1 gap-6'>
-          <WeeklyStatsChart />
-        </div>
-          </>
-        )}
-
-        {/* Goals Section */}
-        {activeSection === 'goals' && (
-          <>
-            <GoalsMetrics />
           </>
         )}
 
@@ -494,15 +678,147 @@ function DashboardContent() {
             <HabitsMetrics />
           </>
         )}
-      </div>
 
-      {/* Add Goal Modal */}
-      <AddGoalModal
-        isOpen={isAddGoalModalOpen}
-        onClose={() => setIsAddGoalModalOpen(false)}
-        onAdd={handleAddGoal}
-        existingGoals={goals}
-      />
+        {/* News Section */}
+        {activeSection === 'news' && (
+          <>
+            <div className='bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-lg p-6'>
+              <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-6'>📰 News Feed</h2>
+              
+              {/* Category Selector for Viewing */}
+              <div className='mb-6'>
+                <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3'>Browse By Category</h3>
+                <div className='flex flex-wrap gap-2'>
+                  <button
+                    onClick={() => handleFetchNewsByCategory('feed')}
+                    className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
+                      selectedNewsCategory === 'feed'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    📌 My Feed
+                  </button>
+                  {newsCategories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => handleFetchNewsByCategory(category)}
+                      className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
+                        selectedNewsCategory === category
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-2'>
+                  Click a category to view latest news from that category
+                </p>
+              </div>
+
+              <div className='h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent my-6'></div>
+              
+              {/* Subscription Management */}
+              <div className='mb-6'>
+                <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3'>My Subscriptions</h3>
+                <div className='flex flex-wrap gap-2'>
+                  {newsCategories.map((category) => {
+                    const isSubscribed = subscribedCategories.includes(category);
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => isSubscribed ? handleUnsubscribeFromCategory(category) : handleSubscribeToCategory(category)}
+                        className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
+                          isSubscribed
+                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-md hover:shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {isSubscribed ? '✓ ' : '+ '}{category.charAt(0).toUpperCase() + category.slice(1)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-2'>
+                  Subscribe to categories to include them in "My Feed". Your personalized feed combines all subscribed categories.
+                </p>
+              </div>
+
+              {/* News Articles */}
+              <div className='space-y-4'>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200'>
+                    {selectedNewsCategory === 'feed' 
+                      ? '📌 Your Personalized Feed' 
+                      : `📰 ${selectedNewsCategory.charAt(0).toUpperCase() + selectedNewsCategory.slice(1)} News`
+                    }
+                  </h3>
+                  <button
+                    onClick={() => handleFetchNewsByCategory(selectedNewsCategory)}
+                    className='px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
+                
+                {newsLoading ? (
+                  <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
+                    Loading news...
+                  </div>
+                ) : news.length === 0 ? (
+                  <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
+                    <p>No news articles available.</p>
+                    <p className='text-xs mt-2'>Subscribe to categories above to see articles.</p>
+                  </div>
+                ) : (
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                    {news.map((article, index) => (
+                      <a
+                        key={article.id || index}
+                        href={article.url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='group bg-gray-50 dark:bg-gray-800/80 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-105'
+                      >
+                        {article.imageUrl && (
+                          <div className='w-full h-40 mb-3 rounded-lg overflow-hidden'>
+                            <img
+                              src={article.imageUrl}
+                              alt={article.title}
+                              className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-300'
+                            />
+                          </div>
+                        )}
+                        <div className='flex items-center gap-2 mb-2'>
+                          <span className='text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase'>
+                            {article.category}
+                          </span>
+                          <span className='text-xs text-gray-500 dark:text-gray-400'>
+                            {article.source}
+                          </span>
+                        </div>
+                        <h3 className='font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'>
+                          {article.title}
+                        </h3>
+                        {article.description && (
+                          <p className='text-sm text-gray-600 dark:text-gray-400 line-clamp-3'>
+                            {article.description}
+                          </p>
+                        )}
+                        <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+                          {new Date(article.publishedAt).toLocaleDateString()}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </DashboardLayout>
   );
 }

@@ -152,3 +152,41 @@ class ChatResponse(BaseModel):
     responseText: str
     threadId: str
     runId: str
+
+# Stock Models
+class StockSymbol(BaseModel):
+    symbol: str
+
+class StockQuote(BaseModel):
+    symbol: str
+    name: str
+    price: float
+    change: float
+    changePercent: float
+    high: Optional[float] = None
+    low: Optional[float] = None
+    open: Optional[float] = None
+    previousClose: Optional[float] = None
+    volume: Optional[int] = None
+    marketCap: Optional[int] = None
+    currency: str = "USD"
+    exchange: Optional[str] = None
+    timestamp: str
+
+class UserStockPreferences(BaseModel):
+    watchlist: List[str] = []  # List of stock symbols
+
+# News Models
+class NewsArticle(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    url: str
+    imageUrl: Optional[str] = None
+    source: str
+    publishedAt: str
+    category: str
+    author: Optional[str] = None
+
+class UserNewsPreferences(BaseModel):
+    subscribedCategories: List[str] = ["business", "technology"]  # Default categories

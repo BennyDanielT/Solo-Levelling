@@ -2,7 +2,8 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000';
+// Use Docker service name for server-side calls, localhost for client-side
+const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://fastapi:8000';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -91,9 +92,10 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // For Google OAuth, save user to MongoDB
+      // For Google OAuth, save user to MongoDB and get JWT token
       if (account?.provider === 'google' && user.email) {
         try {
+          console.log('🔐 OAuth login - saving user and getting JWT token');
           const res = await fetch(`${FASTAPI_URL}/auth/oauth-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -108,9 +110,20 @@ export const authOptions: NextAuthOptions = {
           
           if (!res.ok) {
             console.error('Failed to save OAuth user to MongoDB');
+            return false;
+          }
+          
+          const data = await res.json();
+          console.log('✅ OAuth login response:', data);
+          
+          // Store the JWT token in the user object so it can be added to the session
+          if (data.access_token) {
+            (user as any).accessToken = data.access_token;
+            console.log('💾 Stored JWT token in user object');
           }
         } catch (error) {
           console.error('Error saving OAuth user:', error);
+          return false;
         }
       }
       return true;

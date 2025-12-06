@@ -17,9 +17,13 @@ from models import (
     UserRegister, UserResponse, UserInDB,
     GoalCreate, GoalResponse, GoalInDB,
     AchievementResponse,
-    ChatRequest, ChatResponse
+    ChatRequest, ChatResponse,
+    StockSymbol, StockQuote, UserStockPreferences,
+    NewsArticle, UserNewsPreferences
 )
 from auth import hash_password, verify_password, create_access_token, get_current_user
+from stocks import StockService
+from news import NewsService
 
 load_dotenv()
 
@@ -226,6 +230,7 @@ async def login(credentials: dict):
 @app.post("/auth/oauth-login")
 async def oauth_login(data: dict):
     """Handle OAuth login (Google, etc.) and create/update user"""
+    logger.info("🔐 [OAUTH] OAuth login request received")
     email = data.get("email")
     name = data.get("name")
     image = data.get("image")
@@ -249,7 +254,28 @@ async def oauth_login(data: dict):
                 "platformId": provider_id
             }}
         )
-        return {"success": True, "message": "User updated"}
+        
+        # Generate JWT token for existing user
+        access_token = create_access_token(
+            data={"sub": email},
+            expires_delta=timedelta(days=7)
+        )
+        
+        logger.info(f"✅ [OAUTH] Existing user logged in: {email}")
+        return {
+            "success": True,
+            "message": "User updated",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": str(user["_id"]),
+                "email": user["email"],
+                "name": user.get("name"),
+                "username": user.get("username"),
+                "level": user.get("level", 1),
+                "rank": user.get("rank", "E")
+            }
+        }
     
     # Create new user
     user_doc = {
@@ -278,13 +304,24 @@ async def oauth_login(data: dict):
     
     result = await users_collection.insert_one(user_doc)
     
+    # Generate JWT token for new user
+    access_token = create_access_token(
+        data={"sub": email},
+        expires_delta=timedelta(days=7)
+    )
+    
+    logger.info(f"✅ [OAUTH] New user created: {email}")
     return {
         "success": True,
         "message": "User created",
+        "access_token": access_token,
+        "token_type": "bearer",
         "data": {
             "id": str(result.inserted_id),
             "email": email,
-            "name": name
+            "name": name,
+            "level": 1,
+            "rank": "E"
         }
     }
 
@@ -657,3 +694,318 @@ async def chat(request: ChatRequest):
     except Exception as e:
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== STOCKS ROUTES ====================
+
+@app.get("/stocks/search/{query}")
+async def search_stocks(query: str, current_user: dict = Depends(get_current_user)):
+    """Search for stocks by symbol or name"""
+    logger.info(f"📈 [STOCKS] Searching for: {query}")
+    results = await StockService.search_stocks(query)
+    return {
+        "success": True,
+        "data": results
+    }
+
+@app.get("/stocks/quote/{symbol}")
+async def get_stock_quote(symbol: str, current_user: dict = Depends(get_current_user)):
+    """Get current quote for a stock"""
+    logger.info(f"📈 [STOCKS] Fetching quote for: {symbol}")
+    quote = await StockService.get_stock_quote(symbol)
+    
+    if not quote:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    
+    return {
+        "success": True,
+        "data": quote
+    }
+
+@app.get("/stocks/watchlist")
+async def get_watchlist(current_user: dict = Depends(get_current_user)):
+    """Get user's stock watchlist with current quotes"""
+    logger.info(f"📈 [STOCKS] Fetching watchlist for: {current_user['email']}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's watchlist
+    watchlist = user.get("stockPreferences", {}).get("watchlist", [])
+    
+    # Fetch quotes for all symbols
+    quotes = await StockService.get_multiple_quotes(watchlist)
+    
+    return {
+        "success": True,
+        "data": {
+            "watchlist": watchlist,
+            "quotes": quotes
+        }
+    }
+
+@app.post("/stocks/watchlist/add")
+async def add_to_watchlist(stock: StockSymbol, current_user: dict = Depends(get_current_user)):
+    """Add a stock to user's watchlist"""
+    logger.info(f"📈 [STOCKS] Adding {stock.symbol} to watchlist for: {current_user['email']}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify stock exists
+    quote = await StockService.get_stock_quote(stock.symbol)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Stock symbol not found")
+    
+    # Get current stock preferences or initialize
+    stock_prefs = user.get("stockPreferences", {"watchlist": []})
+    watchlist = stock_prefs.get("watchlist", [])
+    
+    # Add symbol if not already in watchlist
+    symbol_upper = stock.symbol.upper()
+    if symbol_upper not in watchlist:
+        watchlist.append(symbol_upper)
+        
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"stockPreferences": {"watchlist": watchlist}}}
+        )
+        
+        logger.info(f"✅ [STOCKS] Added {symbol_upper} to watchlist")
+        return {
+            "success": True,
+            "message": f"Added {symbol_upper} to watchlist",
+            "data": {"watchlist": watchlist}
+        }
+    else:
+        return {
+            "success": True,
+            "message": f"{symbol_upper} already in watchlist",
+            "data": {"watchlist": watchlist}
+        }
+
+@app.delete("/stocks/watchlist/{symbol}")
+async def remove_from_watchlist(symbol: str, current_user: dict = Depends(get_current_user)):
+    """Remove a stock from user's watchlist"""
+    logger.info(f"📈 [STOCKS] Removing {symbol} from watchlist for: {current_user['email']}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get current stock preferences or initialize
+    stock_prefs = user.get("stockPreferences", {"watchlist": []})
+    watchlist = stock_prefs.get("watchlist", [])
+    
+    # Remove symbol
+    symbol_upper = symbol.upper()
+    if symbol_upper in watchlist:
+        watchlist.remove(symbol_upper)
+        
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"stockPreferences": {"watchlist": watchlist}}}
+        )
+        
+        logger.info(f"✅ [STOCKS] Removed {symbol_upper} from watchlist")
+        return {
+            "success": True,
+            "message": f"Removed {symbol_upper} from watchlist",
+            "data": {"watchlist": watchlist}
+        }
+    else:
+        return {
+            "success": True,
+            "message": f"{symbol_upper} not in watchlist",
+            "data": {"watchlist": watchlist}
+        }
+
+@app.get("/stocks/history/{symbol}")
+async def get_stock_history(symbol: str, period: str = "1mo", current_user: dict = Depends(get_current_user)):
+    """Get historical stock data"""
+    logger.info(f"📈 [STOCKS] Fetching history for {symbol}, period: {period}")
+    history = await StockService.get_stock_history(symbol, period)
+    
+    if not history:
+        raise HTTPException(status_code=404, detail="Stock history not found")
+    
+    return {
+        "success": True,
+        "data": history
+    }
+
+# ==================== NEWS ROUTES ====================
+
+@app.get("/news/categories")
+async def get_news_categories(current_user: dict = Depends(get_current_user)):
+    """Get available news categories"""
+    return {
+        "success": True,
+        "data": {
+            "categories": NewsService.get_available_categories()
+        }
+    }
+
+@app.get("/news/category/{category}")
+async def get_news_by_category(category: str, limit: int = 10, current_user: dict = Depends(get_current_user)):
+    """Get news articles by category"""
+    logger.info(f"📰 [NEWS] Fetching {category} news, limit: {limit}")
+    articles = await NewsService.get_news_by_category(category, limit)
+    
+    return {
+        "success": True,
+        "data": {
+            "category": category,
+            "articles": articles,
+            "count": len(articles)
+        }
+    }
+
+@app.get("/news/search/{query}")
+async def search_news(query: str, limit: int = 10, current_user: dict = Depends(get_current_user)):
+    """Search news articles by keyword"""
+    logger.info(f"📰 [NEWS] Searching news for: {query}")
+    articles = await NewsService.get_news_by_query(query, limit)
+    
+    return {
+        "success": True,
+        "data": {
+            "query": query,
+            "articles": articles,
+            "count": len(articles)
+        }
+    }
+
+@app.get("/news/trending")
+async def get_trending_news(limit: int = 10, current_user: dict = Depends(get_current_user)):
+    """Get trending news"""
+    logger.info(f"📰 [NEWS] Fetching trending news")
+    articles = await NewsService.get_trending_news(limit)
+    
+    return {
+        "success": True,
+        "data": {
+            "articles": articles,
+            "count": len(articles)
+        }
+    }
+
+@app.get("/news/feed")
+async def get_news_feed(current_user: dict = Depends(get_current_user)):
+    """Get personalized news feed based on user's subscribed categories"""
+    logger.info(f"📰 [NEWS] Fetching news feed for: {current_user['email']}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's subscribed categories
+    subscribed_categories = user.get("newsPreferences", {}).get("subscribedCategories", ["business", "technology"])
+    
+    # Fetch articles from each category
+    all_articles = []
+    for category in subscribed_categories:
+        articles = await NewsService.get_news_by_category(category, limit=5)
+        all_articles.extend(articles)
+    
+    return {
+        "success": True,
+        "data": {
+            "subscribedCategories": subscribed_categories,
+            "articles": all_articles,
+            "count": len(all_articles)
+        }
+    }
+
+@app.post("/news/subscribe/{category}")
+async def subscribe_to_category(category: str, current_user: dict = Depends(get_current_user)):
+    """Subscribe to a news category"""
+    logger.info(f"📰 [NEWS] Subscribing {current_user['email']} to {category}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify category exists
+    if category not in NewsService.get_available_categories():
+        raise HTTPException(status_code=400, detail="Invalid category")
+    
+    # Get current news preferences or initialize with defaults
+    news_prefs = user.get("newsPreferences", {"subscribedCategories": ["business", "technology"]})
+    subscribed = news_prefs.get("subscribedCategories", ["business", "technology"])
+    
+    # Add category if not already subscribed
+    if category not in subscribed:
+        subscribed.append(category)
+        
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"newsPreferences": {"subscribedCategories": subscribed}}}
+        )
+        
+        logger.info(f"✅ [NEWS] Subscribed to {category}")
+        return {
+            "success": True,
+            "message": f"Subscribed to {category}",
+            "data": {"subscribedCategories": subscribed}
+        }
+    else:
+        return {
+            "success": True,
+            "message": f"Already subscribed to {category}",
+            "data": {"subscribedCategories": subscribed}
+        }
+
+@app.delete("/news/unsubscribe/{category}")
+async def unsubscribe_from_category(category: str, current_user: dict = Depends(get_current_user)):
+    """Unsubscribe from a news category"""
+    logger.info(f"📰 [NEWS] Unsubscribing {current_user['email']} from {category}")
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get current news preferences or initialize
+    news_prefs = user.get("newsPreferences", {"subscribedCategories": []})
+    subscribed = news_prefs.get("subscribedCategories", [])
+    
+    # Remove category
+    if category in subscribed:
+        subscribed.remove(category)
+        
+        await users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"newsPreferences": {"subscribedCategories": subscribed}}}
+        )
+        
+        logger.info(f"✅ [NEWS] Unsubscribed from {category}")
+        return {
+            "success": True,
+            "message": f"Unsubscribed from {category}",
+            "data": {"subscribedCategories": subscribed}
+        }
+    else:
+        return {
+            "success": True,
+            "message": f"Not subscribed to {category}",
+            "data": {"subscribedCategories": subscribed}
+        }
+
+@app.get("/news/preferences")
+async def get_news_preferences(current_user: dict = Depends(get_current_user)):
+    """Get user's news preferences"""
+    user = await users_collection.find_one({"email": current_user["email"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    subscribed = user.get("newsPreferences", {}).get("subscribedCategories", ["business", "technology"])
+    
+    return {
+        "success": True,
+        "data": {
+            "subscribedCategories": subscribed,
+            "availableCategories": NewsService.get_available_categories()
+        }
+    }

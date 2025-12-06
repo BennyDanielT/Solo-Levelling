@@ -1,0 +1,11 @@
+FROM mongo:4.4.29
+
+# Copy initialization scripts
+COPY scripts/mongo-init.js /docker-entrypoint-initdb.d/
+
+# Expose MongoDB port
+EXPOSE 27017
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD mongo --eval "db.adminCommand('ping')" --quiet || exit 1
