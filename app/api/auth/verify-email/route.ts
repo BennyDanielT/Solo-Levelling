@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || 'http://localhost:8000'
+const FRONTEND_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     if (!token) {
       console.error('❌ [VERIFY] No token provided')
       return NextResponse.redirect(
-        new URL('/auth/signin?error=Invalid verification link', request.url)
+        new URL('/auth/signin?error=Invalid verification link', FRONTEND_URL)
       )
     }
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     } catch (parseError) {
       console.error('❌ [VERIFY] Failed to parse response as JSON')
       return NextResponse.redirect(
-        new URL('/auth/signin?error=Server error - invalid response', request.url)
+        new URL('/auth/signin?error=Server error - invalid response', FRONTEND_URL)
       )
     }
 
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           `/auth/signin?error=${encodeURIComponent(data.detail || 'Verification failed')}`,
-          request.url
+          FRONTEND_URL
         )
       )
     }
@@ -57,13 +58,13 @@ export async function GET(request: NextRequest) {
     console.log('✅ [VERIFY] Email verified successfully')
     // Redirect to signin with success message
     return NextResponse.redirect(
-      new URL('/auth/signin?verified=true', request.url)
+      new URL('/auth/signin?verified=true', FRONTEND_URL)
     )
   } catch (error: any) {
     console.error('❌ [VERIFY] Email verification error:', error)
     console.error('❌ [VERIFY] Error message:', error?.message)
     return NextResponse.redirect(
-      new URL('/auth/signin?error=Verification failed', request.url)
+      new URL('/auth/signin?error=Verification failed', FRONTEND_URL)
     )
   }
 }
