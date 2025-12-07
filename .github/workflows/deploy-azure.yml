@@ -118,7 +118,7 @@ jobs:
                 --environment ${{ secrets.AZURE_CONTAINER_APP_ENVIRONMENT }} \
                 --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest \
                 --target-port 8000 \
-                --ingress internal \
+                --ingress external \
                 --min-replicas 1 \
                 --max-replicas 3 \
                 --cpu 0.5 \
@@ -138,7 +138,14 @@ jobs:
               az containerapp update \
                 --name solo-leveling-fastapi \
                 --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
+                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }} \
+                --set-env-vars \
+                  MONGODB_URL=${{ secrets.MONGODB_URL }} \
+                  NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
+                  GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+                  GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+                  NEWS_API_KEY=${{ secrets.NEWS_API_KEY }} \
+                  NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
             fi
 
             # Get FastAPI internal URL
@@ -177,7 +184,14 @@ jobs:
               az containerapp update \
                 --name solo-leveling-nextjs \
                 --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
+                --image ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }} \
+                --set-env-vars \
+                  NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
+                  NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }} \
+                  GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+                  GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+                  NEXT_PUBLIC_FASTAPI_URL=https://${FASTAPI_URL} \
+                  FASTAPI_SERVICE_URL=https://${FASTAPI_URL}
             fi
 
       - name: Get Application URL

@@ -16,6 +16,8 @@ import {
 import { useToast } from '@/components/dashboard/ToastSystem';
 import { ThemeButton } from '@/lib/theme/ThemeButton';
 
+const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000';
+
 // Main dashboard content component
 function DashboardContent() {
   const { data: session } = useSession();
@@ -85,7 +87,7 @@ function DashboardContent() {
         console.log('📰 Fetching news with token');
 
         // Fetch available categories
-        const categoriesResponse = await fetch('http://localhost:8000/news/categories', {
+        const categoriesResponse = await fetch(`${FASTAPI_URL}/news/categories`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const categoriesData = await categoriesResponse.json();
@@ -94,7 +96,7 @@ function DashboardContent() {
         }
 
         // Fetch user's news preferences
-        const preferencesResponse = await fetch('http://localhost:8000/news/preferences', {
+        const preferencesResponse = await fetch(`${FASTAPI_URL}/news/preferences`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const preferencesData = await preferencesResponse.json();
@@ -103,7 +105,7 @@ function DashboardContent() {
         }
 
         // Fetch personalized news feed
-        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+        const feedResponse = await fetch(`${FASTAPI_URL}/news/feed`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const feedData = await feedResponse.json();
@@ -137,7 +139,7 @@ function DashboardContent() {
         console.log('📈 Fetching stocks with token');
 
         // Fetch watchlist from backend
-        const response = await fetch('http://localhost:8000/stocks/watchlist', {
+        const response = await fetch(`${FASTAPI_URL}/stocks/watchlist`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -180,7 +182,7 @@ function DashboardContent() {
         if (!token) return;
 
         console.log('🔍 Searching for:', searchSymbol);
-        const response = await fetch(`http://localhost:8000/stocks/search/${searchSymbol}`, {
+        const response = await fetch(`${FASTAPI_URL}/stocks/search/${searchSymbol}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
@@ -211,7 +213,7 @@ function DashboardContent() {
 
       console.log('➕ Adding stock:', symbol);
 
-      const response = await fetch('http://localhost:8000/stocks/watchlist/add', {
+      const response = await fetch(`${FASTAPI_URL}/stocks/watchlist/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -226,7 +228,7 @@ function DashboardContent() {
       
       if (data.success) {
         // Refresh stocks to get updated watchlist and quotes
-        const watchlistResponse = await fetch('http://localhost:8000/stocks/watchlist', {
+        const watchlistResponse = await fetch(`${FASTAPI_URL}/stocks/watchlist`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const watchlistData = await watchlistResponse.json();
@@ -258,7 +260,7 @@ function DashboardContent() {
       
       console.log('➖ Removing stock:', symbol);
 
-      const response = await fetch(`http://localhost:8000/stocks/watchlist/${symbol}`, {
+      const response = await fetch(`${FASTAPI_URL}/stocks/watchlist/${symbol}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -284,7 +286,7 @@ function DashboardContent() {
       console.log('📰 Subscribing to category:', category);
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8000/news/subscribe/${category}`, {
+      const response = await fetch(`${FASTAPI_URL}/news/subscribe/${category}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -295,7 +297,7 @@ function DashboardContent() {
         showSuccess('Subscribed', `You are now subscribed to ${category} news`);
         
         // Refresh news feed
-        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+        const feedResponse = await fetch(`${FASTAPI_URL}/news/feed`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const feedData = await feedResponse.json();
@@ -314,7 +316,7 @@ function DashboardContent() {
       console.log('📰 Unsubscribing from category:', category);
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8000/news/unsubscribe/${category}`, {
+      const response = await fetch(`${FASTAPI_URL}/news/unsubscribe/${category}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -325,7 +327,7 @@ function DashboardContent() {
         showSuccess('Unsubscribed', `You have unsubscribed from ${category} news`);
         
         // Refresh news feed
-        const feedResponse = await fetch('http://localhost:8000/news/feed', {
+        const feedResponse = await fetch(`${FASTAPI_URL}/news/feed`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const feedData = await feedResponse.json();
@@ -348,12 +350,12 @@ function DashboardContent() {
       let response;
       if (category === 'feed') {
         // Fetch personalized feed
-        response = await fetch('http://localhost:8000/news/feed', {
+        response = await fetch(`${FASTAPI_URL}/news/feed`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
       } else {
         // Fetch specific category
-        response = await fetch(`http://localhost:8000/news/category/${category}?limit=20`, {
+        response = await fetch(`${FASTAPI_URL}/news/category/${category}?limit=20`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
       }
