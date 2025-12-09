@@ -49,8 +49,14 @@ interface FloatingQuickPanelProps {
 }
 
 export function FloatingQuickPanel({ onAddGoal }: FloatingQuickPanelProps) {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // Don't show panel for unauthenticated users
+  if (status === 'unauthenticated' || !session) {
+    return null;
+  }
 
   const handleAction = (action: string) => {
     setIsOpen(false);

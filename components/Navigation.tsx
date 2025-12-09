@@ -26,8 +26,11 @@ export default function Navigation() {
               <Link href='/' className={linkClass('/')}>
                 Home
               </Link>
+              <Link href='/dashboard' className={linkClass('/dashboard')}>
+                Dashboard
+              </Link>
               <Link href='/coach' className={linkClass('/coach')}>
-                LLM Chat
+                Coach
               </Link>
               <Link href='/goals' className={linkClass('/goals')}>
                 Goals
