@@ -53,12 +53,41 @@ services:
       AZURE_AI_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT:-}
       AZURE_EXISTING_AGENT_ID: ${AZURE_EXISTING_AGENT_ID:-}
       NEWS_API_KEY: ${NEWS_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      # Azure Service Principal authentication
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+      AZURE_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID:-}
     ports:
       - "8000:8000"
     volumes:
       - ./ai-agent-service:/app
+      # Mount Azure CLI credentials from host for DefaultAzureCredential
+      - ${HOME}/.azure:/root/.azure:ro
     networks:
       - solo-leveling-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: solo-leveling-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - solo-leveling-network
+    # Optional: GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
 
   app:
     build:
@@ -91,6 +120,8 @@ services:
 
 volumes:
   mongodb_data:
+    driver: local
+  ollama_data:
     driver: local
 
 networks:

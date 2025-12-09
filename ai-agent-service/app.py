@@ -24,6 +24,7 @@ from models import (
 from auth import hash_password, verify_password, create_access_token, get_current_user
 from stocks import StockService
 from news import NewsService
+from llm_service import llm_service
 
 load_dotenv()
 
@@ -1015,3 +1016,146 @@ async def get_news_preferences(current_user: dict = Depends(get_current_user)):
             "availableCategories": NewsService.get_available_categories()
         }
     }
+
+# ==================== LLM/AI COACH ROUTES ====================
+
+@app.post("/llm/chat")
+async def llm_chat(request: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Chat with LLM (Azure AI Foundry or Ollama)
+    Request body: { "message": "your message", "include_goals": true/false }
+    """
+    logger.info(f"🤖 [LLM] Chat request from: {current_user['email']}")
+    
+    message = request.get("message")
+    include_goals = request.get("include_goals", True)
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    try:
+        # Get user info for context
+        user = await users_collection.find_one({"email": current_user["email"]})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get user's current goals if requested
+        goals_context = ""
+        if include_goals:
+            goals = await goals_collection.find({"userId": ObjectId(user["_id"])}).to_list(length=50)
+            if goals:
+                active_goals = [g for g in goals if not g.get("completed", False)]
+                completed_goals = [g for g in goals if g.get("completed", False)]
+                
+                goals_context += f"\n\nCurrent Active Goals ({len(active_goals)}):"
+                for goal in active_goals[:5]:  # Limit to 5 most recent
+                    progress = goal.get('progress', 0)
+                    goals_context += f"\n- {goal['title']} ({goal['category']}) - {progress}% complete"
+                    if goal.get('deadline'):
+                        goals_context += f" - Deadline: {goal['deadline']}"
+                
+                if completed_goals:
+                    goals_context += f"\n\nRecently Completed Goals: {len(completed_goals)} total"
+        
+        # Build user context message (this will be part of the conversation)
+        user_context = f"""[USER CONTEXT]
+Name: {user.get('name', 'User')}
+Level: {user.get('level', 1)}
+Rank: {user.get('rank', 'E')}
+Title: {user.get('title', 'Awakened Hunter')}
+Total XP: {user.get('totalPoints', 0)}{goals_context}
+
+[USER MESSAGE]"""
+        
+        # Build messages array with context
+        messages = [
+            {"role": "user", "content": f"{user_context}\n{message}"}
+        ]
+        
+        # Call LLM service (for Azure, don't override agent's instructions)
+        response = await llm_service.chat(
+            messages=messages,
+            user_id=str(user["_id"]),
+            system_prompt=None  # Let Azure agent use its configured instructions
+        )
+        
+        logger.info(f"✅ [LLM] Response generated successfully")
+        return {
+            "success": True,
+            "data": {
+                "response": response,
+                "provider": llm_service.provider,
+                "user_level": user.get('level', 1),
+                "user_rank": user.get('rank', 'E')
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"❌ [LLM] Chat error: {e}")
+        raise HTTPException(status_code=500, detail=f"LLM chat failed: {str(e)}")
+
+@app.post("/llm/goal-suggestion")
+async def suggest_goal_improvements(goal_data: dict, current_user: dict = Depends(get_current_user)):
+    """Get AI suggestions for improving a goal"""
+    logger.info(f"🎯 [LLM] Goal suggestion request from: {current_user['email']}")
+    
+    try:
+        goal_title = goal_data.get("title", "")
+        goal_description = goal_data.get("description", "")
+        goal_category = goal_data.get("category", "")
+        
+        if not goal_title:
+            raise HTTPException(status_code=400, detail="Goal title is required")
+        
+        # Build prompt for goal analysis
+        system_prompt = "You are a goal-setting expert. Analyze goals and provide specific, actionable suggestions for improvement."
+        
+        user_message = f"""Analyze this goal and suggest improvements:
+
+Title: {goal_title}
+Description: {goal_description}
+Category: {goal_category}
+
+Provide:
+1. A more specific and measurable goal statement
+2. 3-5 concrete action steps
+3. Potential obstacles and how to overcome them
+4. A realistic timeline
+
+Keep your response concise and actionable."""
+        
+        messages = [{"role": "user", "content": user_message}]
+        
+        response = await llm_service.chat(
+            messages=messages,
+            system_prompt=system_prompt
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "suggestions": response,
+                "provider": llm_service.provider
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"❌ [LLM] Goal suggestion error: {e}")
+        raise HTTPException(status_code=500, detail=f"Goal suggestion failed: {str(e)}")
+
+@app.get("/llm/health")
+async def llm_health_check():
+    """Check LLM service health"""
+    logger.info("🏥 [LLM] Health check requested")
+    try:
+        health_status = await llm_service.health_check()
+        return {
+            "success": True,
+            "data": health_status
+        }
+    except Exception as e:
+        logger.error(f"❌ [LLM] Health check failed: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
