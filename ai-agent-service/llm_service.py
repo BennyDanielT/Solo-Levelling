@@ -113,15 +113,29 @@ class LLMService:
             
             logger.info(f"🤖 Using agent: {agent_id}")
             
-            # Import the tool function from agent_tools
-            from agent_tools import get_stock_history
+            # Import tool functions from agent_tools
+            from agent_tools import (
+                get_stock_history, 
+                get_user_goals, 
+                create_goal, 
+                delete_goal, 
+                get_news_by_category,
+                set_user_email
+            )
             import nest_asyncio
             nest_asyncio.apply()
             
-            # Enable auto function calls with the function from agent_tools
-            logger.info("🔧 Enabling auto function calls...")
+            # Set user email in thread context for agent tools to access
+            if user_email:
+                set_user_email(user_email)
+                logger.info(f"📧 User email set for agent tools: {user_email}")
+            else:
+                logger.warning("⚠️ No user email provided - goal/user functions may fail")
+            
+            # Enable auto function calls with all tools from agent_tools
+            logger.info("🔧 Enabling auto function calls with 5 tools...")
             self.project_client.agents.enable_auto_function_calls(
-                tools={get_stock_history},
+                tools={get_stock_history, get_user_goals, create_goal, delete_goal, get_news_by_category},
                 max_retry=5
             )
             

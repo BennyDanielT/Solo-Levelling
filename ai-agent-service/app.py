@@ -25,6 +25,7 @@ from auth import hash_password, verify_password, create_access_token, get_curren
 from stocks import StockService
 from news import NewsService
 from llm_service import llm_service
+from goal_service import GoalService
 
 load_dotenv()
 
@@ -515,134 +516,45 @@ async def get_dashboard_metrics(current_user: dict = Depends(get_current_user)):
 @app.get("/goals")
 async def get_goals(current_user: dict = Depends(get_current_user)):
     """Get all goals for current user"""
-    user = await users_collection.find_one({"email": current_user["email"]})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    goals_cursor = goals_collection.find({"userId": str(user["_id"])}).sort("createdAt", -1)
-    goals = await goals_cursor.to_list(length=100)
-    
-    # Convert ObjectId to string
-    for goal in goals:
-        goal["id"] = str(goal.pop("_id"))
-    
-    return {
-        "success": True,
-        "data": goals
-    }
+    result = await GoalService.get_user_goals(current_user["email"])
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
 
 @app.post("/goals", status_code=201)
 async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current_user)):
     """Create a new goal"""
     logger.info(f"🎯 [GOALS] Creating goal for user: {current_user['email']}")
-    user = await users_collection.find_one({"email": current_user["email"]})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    goal_doc = {
-        "title": goal.title,
-        "description": goal.description,
-        "category": goal.category,
-        "priority": goal.priority,
-        "targetDate": goal.targetDate,
-        "status": goal.status,
-        "progress": goal.progress,
-        "tags": goal.tags,
-        "userId": str(user["_id"]),
-        "completed": False,
-        "createdAt": datetime.utcnow(),
-        "completedAt": None,
-        "updatedAt": datetime.utcnow()
-    }
-    
-    result = await goals_collection.insert_one(goal_doc)
-    goal_doc["id"] = str(result.inserted_id)
-    goal_doc.pop("_id", None)
-    
-    return {
-        "success": True,
-        "message": "Goal created successfully",
-        "data": goal_doc
-    }
+    result = await GoalService.create_goal(
+        user_email=current_user["email"],
+        title=goal.title,
+        description=goal.description,
+        category=goal.category,
+        priority=goal.priority,
+        target_date=goal.targetDate,
+        tags=goal.tags
+    )
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
 
 @app.put("/goals/{goal_id}")
 async def update_goal(goal_id: str, update_data: dict, current_user: dict = Depends(get_current_user)):
     """Update goal"""
     logger.info(f"✏️ [GOALS] Updating goal {goal_id} for user: {current_user['email']}")
-    user = await users_collection.find_one({"email": current_user["email"]})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    goal = await goals_collection.find_one({
-        "_id": ObjectId(goal_id),
-        "userId": str(user["_id"])
-    })
-    
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    
-    # Prepare update
-    goal_update = {
-        "updatedAt": datetime.utcnow()
-    }
-    
-    # Handle status/completed changes
-    if "status" in update_data:
-        goal_update["status"] = update_data["status"]
-        if update_data["status"] == "completed":
-            goal_update["completed"] = True
-            goal_update["completedAt"] = datetime.utcnow()
-            goal_update["progress"] = 100
-    
-    if "completed" in update_data and update_data["completed"]:
-        goal_update["completed"] = True
-        goal_update["completedAt"] = datetime.utcnow()
-        goal_update["status"] = "completed"
-        goal_update["progress"] = 100
-    
-    # Handle progress updates
-    if "progress" in update_data:
-        goal_update["progress"] = min(100, max(0, update_data["progress"]))
-        if goal_update["progress"] == 100 and not goal.get("completed"):
-            goal_update["completed"] = True
-            goal_update["completedAt"] = datetime.utcnow()
-            goal_update["status"] = "completed"
-    
-    # Update other fields if provided
-    for field in ["title", "description", "category", "priority", "targetDate", "tags"]:
-        if field in update_data:
-            goal_update[field] = update_data[field]
-    
-    await goals_collection.update_one(
-        {"_id": ObjectId(goal_id)},
-        {"$set": goal_update}
-    )
-    
+    result = await GoalService.update_goal(current_user["email"], goal_id, update_data)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
     logger.info(f"✅ [GOALS] Goal {goal_id} updated successfully")
-    return {
-        "success": True,
-        "message": "Goal updated successfully"
-    }
+    return result
 
 @app.delete("/goals/{goal_id}")
 async def delete_goal(goal_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a goal"""
-    user = await users_collection.find_one({"email": current_user["email"]})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    result = await goals_collection.delete_one({
-        "_id": ObjectId(goal_id),
-        "userId": str(user["_id"])
-    })
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    
-    return {
-        "success": True,
-        "message": "Goal deleted successfully"
-    }
+    result = await GoalService.delete_goal(current_user["email"], goal_id)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
 
 # ==================== COACH/CHAT ROUTES ====================
 
@@ -657,45 +569,18 @@ async def chat(request: ChatRequest):
                 status_code=400, detail="Missing 'message' in request body"
             )
 
-        # Create client
-        credential = DefaultAzureCredential()
-        client = AgentsClient(PROJECT_ENDPOINT, credential)
-
-        # Create thread
-        thread = client.threads.create()
-        print(f"Created thread: {thread.id}")
-
-        # Create message
-        message = client.messages.create(
-            thread_id=thread.id, role="user", content=user_message
+        # Use LLM service to handle chat
+        response_text = await llm_service.chat(
+            messages=[{"role": "user", "content": user_message}],
+            user_id=None,
+            system_prompt=None,
+            user_email=None
         )
-        print(f"Created message: {message.id}")
-
-        # Run agent
-        run = client.runs.create(thread_id=thread.id, agent_id=AGENT_ID)
-        print(f"Created run: {run.id}")
-
-        # Wait for completion
-        run_status = run.status
-        while run_status == "queued" or run_status == "in_progress":
-            time.sleep(1)
-            updated_run = client.runs.get(thread_id=thread.id, run_id=run.id)
-            run_status = updated_run.status
-            print(f"Run status: {run_status}")
-
-        # Retrieve messages
-        messages = client.messages.list(thread_id=thread.id, order="asc")
-
-        response_text = ""
-        for msg in messages:
-            if msg.role == "assistant":
-                for content in msg.content:
-                    if content.type == "text":
-                        response_text = content.text.value
-                        break
 
         return ChatResponse(
-            responseText=response_text, threadId=thread.id, runId=run.id
+            responseText=response_text,
+            threadId="",
+            runId=""
         )
 
     except Exception as e:
