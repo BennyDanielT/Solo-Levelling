@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from azure.ai.agents import AgentsClient
 from azure.identity import DefaultAzureCredential
@@ -828,9 +828,9 @@ async def remove_from_watchlist(symbol: str, current_user: dict = Depends(get_cu
             "data": {"watchlist": watchlist}
         }
 
-@app.get("/stocks/history/{symbol}")
-async def get_stock_history(symbol: str, period: str = "1mo", current_user: dict = Depends(get_current_user)):
-    """Get historical stock data"""
+@app.get("/stocks/history")
+async def get_stock_history(symbol: str, period: str = "1mo"):
+    """Get historical stock data - public endpoint"""
     logger.info(f"📈 [STOCKS] Fetching history for {symbol}, period: {period}")
     history = await StockService.get_stock_history(symbol, period)
     
@@ -1022,7 +1022,7 @@ async def get_news_preferences(current_user: dict = Depends(get_current_user)):
 @app.post("/llm/chat")
 async def llm_chat(request: dict, current_user: dict = Depends(get_current_user)):
     """
-    Chat with LLM (Azure AI Foundry or Ollama)
+    Chat with LLM (Azure AI Foundry or Ollama) with function calling support
     Request body: { "message": "your message", "include_goals": true/false }
     """
     logger.info(f"🤖 [LLM] Chat request from: {current_user['email']}")
@@ -1072,11 +1072,12 @@ Total XP: {user.get('totalPoints', 0)}{goals_context}
             {"role": "user", "content": f"{user_context}\n{message}"}
         ]
         
-        # Call LLM service (for Azure, don't override agent's instructions)
+        # Call LLM service with user_email for function calling
         response = await llm_service.chat(
             messages=messages,
             user_id=str(user["_id"]),
-            system_prompt=None  # Let Azure agent use its configured instructions
+            system_prompt=None,  # Let Azure agent use its configured instructions
+            user_email=current_user["email"]  # Pass email for database queries
         )
         
         logger.info(f"✅ [LLM] Response generated successfully")

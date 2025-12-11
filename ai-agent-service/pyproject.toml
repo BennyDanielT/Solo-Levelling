@@ -22,6 +22,7 @@ pydantic = {extras = ["email"], version = "^2.6.0"}
 loguru = "^0.7.3"
 yfinance = "^0.2.36"
 aiohttp = "^3.9.1"
+nest-asyncio = "^1.6.0"
 
 
 [build-system]

@@ -15,6 +15,8 @@ import {
   HamburgerMenuIcon,
   CheckCircledIcon,
   ChevronLeftIcon,
+  MixIcon,
+  RocketIcon,
 } from '@radix-ui/react-icons';
 
 interface SidebarProps {
@@ -25,6 +27,8 @@ interface SidebarProps {
 export const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Goals', href: '/goals', icon: TargetIcon },
+  { name: 'Coach', href: '/coach', icon: MixIcon },
+  { name: 'Stocks', href: '/stocks', icon: RocketIcon },
   { name: 'Achievements', href: '/achievements', icon: CheckCircledIcon },
   { name: 'Reminders', href: '/reminders', icon: BellIcon },
   { name: 'Analytics', href: '/analytics', icon: BarChartIcon },

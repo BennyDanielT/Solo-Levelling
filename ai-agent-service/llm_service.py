@@ -3,13 +3,16 @@ LLM Service for Solo Levelling
 Supports both Azure AI Foundry and Ollama
 """
 import os
+import json
+import time
 from typing import Optional, List, Dict, Any
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential, ClientSecretCredential
-from azure.ai.agents.models import ListSortOrder
+from azure.ai.agents.models import ListSortOrder, FunctionTool
 from loguru import logger
 import aiohttp
 import asyncio
+from agent_tools import AgentTools
 
 
 class LLMService:
@@ -20,6 +23,8 @@ class LLMService:
         self.project_client = None
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
+        self.agent_tools = AgentTools()
+        self.auto_function_calls_enabled = False
         
         # Initialize based on provider
         if self.provider == "azure":
@@ -57,6 +62,7 @@ class LLMService:
                 credential=credential
             )
             logger.info(f"✅ Azure AI project client initialized: {project_endpoint}")
+                
         except Exception as e:
             logger.error(f"❌ Azure init failed: {e}")
     
@@ -68,7 +74,8 @@ class LLMService:
         self,
         messages: List[Dict[str, str]],
         user_id: Optional[str] = None,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        user_email: Optional[str] = None
     ) -> str:
         """
         Send a chat request to the configured LLM provider
@@ -77,12 +84,13 @@ class LLMService:
             messages: List of message dicts with 'role' and 'content'
             user_id: Optional user ID for context
             system_prompt: Optional system prompt to prepend
+            user_email: User email for function calls
         
         Returns:
             Response text from the LLM
         """
         if self.provider == "azure":
-            return await self._chat_azure(messages, user_id, system_prompt)
+            return await self._chat_azure(messages, user_id, system_prompt, user_email)
         else:
             return await self._chat_ollama(messages, system_prompt)
     
@@ -90,7 +98,8 @@ class LLMService:
         self,
         messages: List[Dict[str, str]],
         user_id: Optional[str],
-        system_prompt: Optional[str]
+        system_prompt: Optional[str],
+        user_email: Optional[str]
     ) -> str:
         """Chat using Azure AI Foundry agents"""
         if not self.project_client:
@@ -103,6 +112,18 @@ class LLMService:
                 raise Exception("AZURE_EXISTING_AGENT_ID not configured. Please create an agent in Azure AI Foundry.")
             
             logger.info(f"🤖 Using agent: {agent_id}")
+            
+            # Import the tool function from agent_tools
+            from agent_tools import get_stock_history
+            import nest_asyncio
+            nest_asyncio.apply()
+            
+            # Enable auto function calls with the function from agent_tools
+            logger.info("🔧 Enabling auto function calls...")
+            self.project_client.agents.enable_auto_function_calls(
+                tools={get_stock_history},
+                max_retry=5
+            )
             
             # Create thread
             thread = self.project_client.agents.threads.create()
@@ -117,36 +138,39 @@ class LLMService:
                         content=msg["content"]
                     )
             
-            # Run agent and wait for completion
+            # Run agent
             logger.info("🏃 Running agent...")
             run = self.project_client.agents.runs.create_and_process(
                 thread_id=thread.id,
                 agent_id=agent_id
             )
             
-            # Check status
+            logger.info(f"📊 Run status: {run.status}")
+            logger.info(f"   Run ID: {run.id}")
+            
+            # Check for completion or failure
             if run.status == "failed":
                 error = run.last_error.message if run.last_error else "Unknown error"
                 logger.error(f"❌ Run failed: {error}")
                 raise Exception(f"Agent run failed: {error}")
             
-            if run.status != "completed":
-                raise Exception(f"Run status: {run.status}")
+            if run.status == "completed":
+                # Get response messages
+                msgs = self.project_client.agents.messages.list(
+                    thread_id=thread.id,
+                    order=ListSortOrder.ASCENDING
+                )
+                
+                # Find assistant response from this run
+                for message in reversed(list(msgs)):
+                    if message.run_id == run.id and message.text_messages:
+                        response = message.text_messages[-1].text.value
+                        logger.info(f"✅ Response: {len(response)} chars")
+                        return response
+                
+                raise Exception("No assistant response found")
             
-            # Get response messages
-            msgs = self.project_client.agents.messages.list(
-                thread_id=thread.id,
-                order=ListSortOrder.ASCENDING
-            )
-            
-            # Find assistant response from this run
-            for message in reversed(list(msgs)):
-                if message.run_id == run.id and message.text_messages:
-                    response = message.text_messages[-1].text.value
-                    logger.info(f"✅ Response: {len(response)} chars")
-                    return response
-            
-            raise Exception("No assistant response found")
+            raise Exception(f"Unexpected run status: {run.status}")
             
         except Exception as e:
             logger.error(f"❌ Azure AI chat error: {e}")

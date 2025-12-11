@@ -131,6 +131,7 @@ class StockService:
         period: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
         """
         try:
+            import numpy as np
             ticker = yf.Ticker(symbol.upper())
             hist = ticker.history(period=period)
             
@@ -140,13 +141,20 @@ class StockService:
             # Convert DataFrame to dict format
             history = []
             for index, row in hist.iterrows():
+                # Handle NaN values by checking if they're valid
+                open_val = row['Open'] if not np.isnan(row['Open']) else None
+                high_val = row['High'] if not np.isnan(row['High']) else None
+                low_val = row['Low'] if not np.isnan(row['Low']) else None
+                close_val = row['Close'] if not np.isnan(row['Close']) else None
+                volume_val = int(row['Volume']) if not np.isnan(row['Volume']) else 0
+                
                 history.append({
                     "date": index.strftime("%Y-%m-%d"),
-                    "open": round(row['Open'], 2),
-                    "high": round(row['High'], 2),
-                    "low": round(row['Low'], 2),
-                    "close": round(row['Close'], 2),
-                    "volume": int(row['Volume'])
+                    "open": round(open_val, 2) if open_val is not None else None,
+                    "high": round(high_val, 2) if high_val is not None else None,
+                    "low": round(low_val, 2) if low_val is not None else None,
+                    "close": round(close_val, 2) if close_val is not None else None,
+                    "volume": volume_val
                 })
             
             return {
