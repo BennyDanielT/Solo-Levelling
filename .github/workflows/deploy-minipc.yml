@@ -1,0 +1,312 @@
+name: Deploy to Mini PC
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DEPLOY_PATH: /home/danny/projects/Solo-Levelling
+  SSH_HOST: ${{ secrets.MINIPC_HOST }}
+  SSH_USER: ${{ secrets.MINIPC_USER }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+      mongodb: ${{ steps.changes.outputs.mongodb }}
+      docker: ${{ steps.changes.outputs.docker }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          # Get list of changed files
+          if [ "${{ github.event_name }}" == "push" ]; then
+            FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD || echo "")
+          fi
+          
+          echo "Changed files:"
+          echo "$FILES"
+          
+          # Check frontend changes
+          if echo "$FILES" | grep -qE '^(app/|components/|lib/|public/|styles/|package\.json|package-lock\.json|next\.config\.js|tsconfig\.json|tailwind\.config\.js|postcss\.config\.js|Dockerfile)$'; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+            echo "✅ Frontend changes detected"
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No frontend changes"
+          fi
+          
+          # Check backend changes
+          if echo "$FILES" | grep -qE '^(ai-agent-service/|Dockerfile\.fastapi)'; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend changes detected"
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No backend changes"
+          fi
+          
+          # Check MongoDB changes
+          if echo "$FILES" | grep -qE '^(Dockerfile\.mongodb|scripts/mongo-.*)'; then
+            echo "mongodb=true" >> $GITHUB_OUTPUT
+            echo "✅ MongoDB changes detected"
+          else
+            echo "mongodb=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No MongoDB changes"
+          fi
+          
+          # Check docker-compose or other infrastructure changes
+          if echo "$FILES" | grep -qE '^(docker-compose\.yml|\.env\.example|docker-manage\.sh)'; then
+            echo "docker=true" >> $GITHUB_OUTPUT
+            echo "✅ Docker config changes detected"
+          else
+            echo "docker=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No docker config changes"
+          fi
+
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    # Skip deployment if commit is from mini PC (already has latest code)
+    if: |
+      !contains(github.event.head_commit.message, '[skip-minipc]') &&
+      !contains(github.event.head_commit.message, '[minipc-deploy]')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.MINIPC_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.MINIPC_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync code to Mini PC
+        run: |
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.env' \
+            --exclude 'mongodb_data' \
+            --exclude 'ollama_data' \
+            ./ ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Tag old containers for rollback
+        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.mongodb == 'true'
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Tag current running containers as rollback
+            if docker ps -q -f name=solo-leveling-app > /dev/null 2>&1; then
+              docker tag solo-leveling-app solo-leveling-app:rollback || true
+            fi
+            if docker ps -q -f name=solo-leveling-fastapi > /dev/null 2>&1; then
+              docker tag solo-leveling-fastapi solo-leveling-fastapi:rollback || true
+            fi
+            if docker ps -q -f name=solo-leveling-mongodb > /dev/null 2>&1; then
+              docker tag solo-leveling-mongodb solo-leveling-mongodb:rollback || true
+            fi
+            
+            echo "✅ Old containers tagged for rollback"
+          EOF
+
+      - name: Pull latest base images
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Pull base images for incremental builds
+            docker pull node:20-alpine || true
+            docker pull python:3.12-slim || true
+            docker pull mongo:4.4 || true
+            docker pull ollama/ollama:latest || true
+            
+            echo "✅ Base images pulled"
+          EOF
+
+      - name: Rebuild and deploy changed services
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            SERVICES=""
+            
+            # Determine which services to rebuild
+            if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+              SERVICES="$SERVICES app"
+              echo "🔨 Will rebuild: app (Next.js)"
+            fi
+            
+            if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ]; then
+              SERVICES="$SERVICES fastapi"
+              echo "🔨 Will rebuild: fastapi"
+            fi
+            
+            if [ "${{ needs.detect-changes.outputs.mongodb }}" == "true" ]; then
+              SERVICES="$SERVICES mongodb"
+              echo "🔨 Will rebuild: mongodb"
+            fi
+            
+            # If docker-compose changed, rebuild all services
+            if [ "${{ needs.detect-changes.outputs.docker }}" == "true" ]; then
+              echo "🔨 Docker config changed - rebuilding all services"
+              SERVICES="app fastapi mongodb"
+            fi
+            
+            # If no changes detected, skip deployment
+            if [ -z "$SERVICES" ]; then
+              echo "⏭️  No services to rebuild"
+              exit 0
+            fi
+            
+            echo "📦 Services to rebuild: $SERVICES"
+            
+            # Stop only the services that will be rebuilt
+            for service in $SERVICES; do
+              echo "⏹️  Stopping $service..."
+              docker compose stop $service || true
+            done
+            
+            # Build and start changed services
+            echo "🏗️  Building services: $SERVICES"
+            docker compose build $SERVICES
+            
+            echo "🚀 Starting services: $SERVICES"
+            docker compose up -d $SERVICES
+            
+            echo "✅ Deployment complete"
+          EOF
+
+      - name: Health check
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo "🏥 Running health checks..."
+            
+            # Wait for services to start
+            sleep 10
+            
+            # Check if containers are running
+            FAILED=0
+            
+            if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+              if ! docker ps | grep -q solo-leveling-app; then
+                echo "❌ Frontend container not running"
+                FAILED=1
+              else
+                echo "✅ Frontend container healthy"
+              fi
+            fi
+            
+            if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ]; then
+              if ! docker ps | grep -q solo-leveling-fastapi; then
+                echo "❌ Backend container not running"
+                FAILED=1
+              else
+                # Test FastAPI health endpoint
+                if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+                  echo "✅ Backend container healthy"
+                else
+                  echo "⚠️  Backend container running but health check failed"
+                  FAILED=1
+                fi
+              fi
+            fi
+            
+            if [ "${{ needs.detect-changes.outputs.mongodb }}" == "true" ]; then
+              if ! docker ps | grep -q solo-leveling-mongodb; then
+                echo "❌ MongoDB container not running"
+                FAILED=1
+              else
+                echo "✅ MongoDB container healthy"
+              fi
+            fi
+            
+            if [ $FAILED -eq 1 ]; then
+              echo "❌ Health check failed"
+              exit 1
+            fi
+            
+            echo "✅ All health checks passed"
+          EOF
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo "⚠️  Deployment failed - rolling back..."
+            
+            # Stop failed containers
+            docker compose down
+            
+            # Restore rollback images
+            if docker images | grep -q "solo-leveling-app:rollback"; then
+              docker tag solo-leveling-app:rollback solo-leveling-app:latest
+            fi
+            if docker images | grep -q "solo-leveling-fastapi:rollback"; then
+              docker tag solo-leveling-fastapi:rollback solo-leveling-fastapi:latest
+            fi
+            if docker images | grep -q "solo-leveling-mongodb:rollback"; then
+              docker tag solo-leveling-mongodb:rollback solo-leveling-mongodb:latest
+            fi
+            
+            # Restart with old images
+            docker compose up -d
+            
+            echo "✅ Rollback complete"
+          EOF
+
+      - name: Cleanup old images
+        if: success()
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo "🧹 Cleaning up old images..."
+            
+            # Remove rollback tags (we keep the images via latest tag)
+            docker rmi solo-leveling-app:rollback 2>/dev/null || true
+            docker rmi solo-leveling-fastapi:rollback 2>/dev/null || true
+            docker rmi solo-leveling-mongodb:rollback 2>/dev/null || true
+            
+            # Prune dangling images (but keep recent ones)
+            docker image prune -f
+            
+            echo "✅ Cleanup complete"
+          EOF
+
+      - name: Display deployment status
+        if: always()
+        run: |
+          ssh ${{ secrets.MINIPC_USER }}@${{ secrets.MINIPC_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo ""
+            echo "=========================================="
+            echo "📊 DEPLOYMENT STATUS"
+            echo "=========================================="
+            docker compose ps
+            echo ""
+            echo "💾 Disk usage:"
+            docker system df
+            echo "=========================================="
+          EOF
