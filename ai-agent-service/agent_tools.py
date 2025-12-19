@@ -33,24 +33,26 @@ def _run_async(coro):
     """
     Helper to run async code from sync context.
     Safely handles event loop creation/reuse without conflicts.
+    Uses nest_asyncio to allow nested event loops when necessary.
     """
     try:
-        # Try to get the running loop (will raise if no loop is running)
+        # Try to get the running loop
         loop = asyncio.get_running_loop()
-        # If we're already in an async context, we can't use asyncio.run()
-        # This shouldn't happen with Azure Agent, but just in case
-        raise RuntimeError("Cannot run async code from within running event loop")
+        # If we get here, there's a running loop - this shouldn't happen
+        # with Azure Agent's sync tool calls, but handle it anyway
+        logger.warning("⚠️ Running loop detected, forcing execution in same loop")
+        # Apply nest_asyncio to allow nested runs
+        import nest_asyncio
+        nest_asyncio.apply()
+        return asyncio.run(coro)
     except RuntimeError as e:
         if "no running event loop" in str(e).lower():
             # No running loop, safe to use asyncio.run()
             return asyncio.run(coro)
         else:
-            # Already in event loop, create new thread
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, coro)
-                return future.result()
-
+            # Unexpected error
+            logger.error(f"❌ Unexpected asyncio error: {e}")
+            raise
 
 # ==================== STOCK TOOLS ====================
 
