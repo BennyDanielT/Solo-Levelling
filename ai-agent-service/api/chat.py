@@ -14,6 +14,7 @@ from services.chat_service import ChatService
 # Request/Response models
 class ChatMessageRequest(BaseModel):
     message: str
+    thread_id: Optional[str] = None  # Optional: pass existing thread_id to continue conversation
 
 
 class ChatMessageResponse(BaseModel):
@@ -35,12 +36,14 @@ async def send_message(
     """
     Send a message and get a response from the Azure AI Agent.
     
-    The conversation is persistent - each user has a primary thread
-    that maintains context across sessions.
+    The conversation is persistent - each user can have multiple threads
+    (conversations). Pass thread_id to continue an existing conversation,
+    or omit it to use/create the default user thread.
     
     Request body:
     {
-        "message": "What goals should I focus on?"
+        "message": "What goals should I focus on?",
+        "thread_id": "optional_thread_id"  # Optional
     }
     
     Response:
@@ -57,9 +60,15 @@ async def send_message(
             raise HTTPException(status_code=401, detail="User email not found in token")
         
         logger.info(f"🤖 [CHAT_API] Message from {user_email}: {request.message[:50]}...")
+        if request.thread_id:
+            logger.info(f"📌 [CHAT_API] Using thread: {request.thread_id}")
         
-        # Process message through chat service
-        response = await ChatService.handle_message(user_email, request.message)
+        # Process message through chat service with optional thread_id
+        response = await ChatService.handle_message(
+            user_email, 
+            request.message,
+            thread_id=request.thread_id
+        )
         
         logger.info(f"✅ [CHAT_API] Response prepared for {user_email}")
         

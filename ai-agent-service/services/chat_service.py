@@ -19,12 +19,12 @@ class ChatService:
     """Service for handling chat conversations with context and persistence"""
     
     @staticmethod
-    async def handle_message(user_email: str, message: str) -> Dict[str, Any]:
+    async def handle_message(user_email: str, message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Process a user message through the conversation pipeline.
         
         Steps:
-        1. Get or create user thread (persistent conversation)
+        1. Get or create user thread (use provided thread_id if available)
         2. Set user context for agent tools
         3. Call Azure AI Agent with message
         4. Extract response and events
@@ -33,6 +33,7 @@ class ChatService:
         Args:
             user_email: User's email (resolved from auth)
             message: User's message
+            thread_id: Optional thread ID - if provided, use that thread; otherwise use/create default
             
         Returns:
             {
@@ -46,8 +47,14 @@ class ChatService:
             logger.info(f"💬 [CHAT] Processing message from {user_email}")
             
             # Step 1: Get or create user's persistent thread
-            thread_record_id = await ThreadService.get_or_create_user_thread(user_email)
-            logger.info(f"📌 [CHAT] Using thread: {thread_record_id}")
+            if thread_id:
+                # Use provided thread_id
+                thread_record_id = thread_id
+                logger.info(f"📌 [CHAT] Using provided thread: {thread_record_id}")
+            else:
+                # Get or create default user thread
+                thread_record_id = await ThreadService.get_or_create_user_thread(user_email)
+                logger.info(f"📌 [CHAT] Using thread: {thread_record_id}")
             
             # Step 2: Get user context for better responses
             user_context = await ChatService._get_user_context(user_email)

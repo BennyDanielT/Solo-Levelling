@@ -9,12 +9,15 @@ const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:800
  * 
  * Handles chat messages by:
  * 1. Authenticating the user via NextAuth
- * 2. Extracting the message from request body
+ * 2. Extracting the message and optional thread_id from request body
  * 3. Forwarding to FastAPI backend (/api/chat)
  * 4. Returning structured response to AI SDK
  * 
  * Expected request body:
- * { "message": "user message text" }
+ * { 
+ *   "message": "user message text",
+ *   "threadId": "optional_thread_id"  // Pass to continue conversation
+ * }
  * 
  * Expected response:
  * {
@@ -38,6 +41,7 @@ export async function POST(req: Request) {
     // Parse request body
     const body = await req.json();
     const message = body.message;
+    const threadId = body.threadId;  // Optional thread ID for conversation continuation
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -62,15 +66,21 @@ export async function POST(req: Request) {
     }
 
     console.log(`[CHAT_API] Message from ${session.user.email}: ${message.slice(0, 50)}...`);
+    if (threadId) {
+      console.log(`[CHAT_API] Using thread: ${threadId}`);
+    }
 
-    // Call FastAPI chat endpoint
+    // Call FastAPI chat endpoint with optional thread_id
     const response = await fetch(`${FASTAPI_URL}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ 
+        message,
+        ...(threadId && { thread_id: threadId })  // Include thread_id if provided
+      }),
     });
 
     if (!response.ok) {

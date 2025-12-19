@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, Upload, X, Trash2 } from "lucide-react";
+import { Plus, Send, Upload, X, Trash2, ChevronLeft, Sparkles, Menu } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -29,6 +29,7 @@ export default function CoachInterface() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -257,165 +258,255 @@ export default function CoachInterface() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* New Chat Button */}
-        <button
-          onClick={createNewThread}
-          className="m-4 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-        >
-          <Plus size={20} />
-          <span>New chat</span>
-        </button>
-
-        {/* Threads List */}
-        <div className="flex-1 overflow-y-auto px-2">
-          {threads.map((thread) => (
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Header Navigation */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
+          {/* Left Section - Logo & Back Button */}
+          <div className="flex items-center gap-3">
             <button
-              key={thread._id}
-              onClick={() => loadThread(thread._id)}
-              className={`w-full text-left px-3 py-2 rounded-lg mb-2 truncate transition-colors ${
-                currentThread?._id === thread._id
-                  ? "bg-blue-500 text-white"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-              title={thread.title}
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              title="Back to Dashboard"
             >
-              <div className="flex items-center justify-between">
-                <span className="truncate flex-1">{thread.title}</span>
-                {currentThread?._id === thread._id && (
-                  <button
-                    onClick={(e) => deleteThread(thread._id, e)}
-                    className="ml-2 p-1 hover:bg-red-500 rounded transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
+              <ChevronLeft size={20} />
+              <span className="hidden sm:inline text-sm font-medium">Dashboard</span>
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {currentThread ? (
-          <>
-            {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
-                      Start a conversation
-                    </h2>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Ask me anything about your goals, stocks, or news.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                messages.map((message, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-md px-4 py-2 rounded-lg ${
-                        message.role === "user"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      {message.content}
-                    </div>
-                  </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">
-                    <div className="flex gap-2">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-700">
+              <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                Life Coach
+              </h1>
             </div>
+          </div>
 
-            {/* Input Area */}
-            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              {/* File Upload Preview */}
-              {uploadedFiles.length > 0 && (
-                <div className="mb-3 flex gap-2 flex-wrap">
-                  {uploadedFiles.map((file, idx) => (
+          {/* Right Section - Sidebar Toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`${
+            sidebarOpen ? "w-64" : "w-0"
+          } bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 overflow-hidden`}
+        >
+          {/* New Chat Button */}
+          <button
+            onClick={createNewThread}
+            className="m-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-lg hover:from-blue-600 hover:to-violet-600 transition-all shadow-md hover:shadow-lg font-medium text-sm"
+          >
+            <Plus size={18} />
+            <span>New chat</span>
+          </button>
+
+          {/* Threads List */}
+          <div className="flex-1 overflow-y-auto px-3 space-y-2">
+            {threads.length === 0 ? (
+              <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-4">
+                No conversations yet
+              </div>
+            ) : (
+              threads.map((thread) => (
+                <button
+                  key={thread._id}
+                  onClick={() => loadThread(thread._id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-all group ${
+                    currentThread?._id === thread._id
+                      ? "bg-gradient-to-r from-blue-500 to-violet-500 text-white shadow-md"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                  }`}
+                  title={thread.title}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="truncate flex-1 text-sm font-medium">
+                      {thread.title}
+                    </span>
+                    {currentThread?._id === thread._id && (
+                      <button
+                        onClick={(e) => deleteThread(thread._id, e)}
+                        className="ml-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500 rounded transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-xs opacity-70 mt-1 truncate">
+                    {new Date(thread.created_at).toLocaleDateString()}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* User Info */}
+          <div className="border-t border-slate-200 dark:border-slate-700 p-4 text-sm">
+            <p className="text-slate-600 dark:text-slate-400">Signed in as</p>
+            <p className="font-medium text-slate-900 dark:text-white truncate">
+              {session?.user?.email}
+            </p>
+          </div>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {currentThread ? (
+            <>
+              {/* Messages Container */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center max-w-md">
+                      <div className="flex justify-center mb-4">
+                        <Sparkles className="w-12 h-12 text-blue-500" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                        Welcome back!
+                      </h2>
+                      <p className="text-slate-600 dark:text-slate-400">
+                        Start a conversation with your AI coach. Ask about goals, progress, or get personalized advice.
+                      </p>
+                      <div className="mt-6 grid grid-cols-1 gap-2">
+                        <button
+                          onClick={() => setInput("What should I focus on today?")}
+                          className="p-3 text-left border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <p className="font-medium text-slate-900 dark:text-white">⚡ What should I focus on?</p>
+                        </button>
+                        <button
+                          onClick={() => setInput("Review my progress on my goals")}
+                          className="p-3 text-left border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <p className="font-medium text-slate-900 dark:text-white">📊 Review my progress</p>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-sm"
+                      className={`flex ${
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      }`}
                     >
-                      <span>{file.name}</span>
-                      <button
-                        onClick={() =>
-                          setUploadedFiles(uploadedFiles.filter((_, i) => i !== idx))
-                        }
-                        className="hover:text-red-500"
+                      <div
+                        className={`max-w-2xl px-4 md:px-6 py-3 md:py-4 rounded-2xl transition-all ${
+                          message.role === "user"
+                            ? "bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-br-none shadow-lg"
+                            : "bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none shadow-md border border-slate-200 dark:border-slate-600"
+                        }`}
                       >
-                        <X size={14} />
-                      </button>
+                        <p className="text-sm md:text-base leading-relaxed">
+                          {message.content}
+                        </p>
+                        {message.timestamp && (
+                          <p className={`text-xs mt-2 ${
+                            message.role === "user"
+                              ? "text-blue-100"
+                              : "text-slate-500 dark:text-slate-400"
+                          }`}>
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Input Bar */}
-              <div className="flex gap-3">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload" className="flex items-center justify-center">
-                  <Upload size={20} className="cursor-pointer text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" />
-                </label>
-
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder="Message Solo Levelling Coach..."
-                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
-                  disabled={isLoading}
-                />
-
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Send size={20} />
-                </button>
+                  ))
+                )}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white dark:bg-slate-700 px-6 py-4 rounded-2xl rounded-bl-none shadow-md border border-slate-200 dark:border-slate-600">
+                      <div className="flex gap-2">
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
+
+              {/* Input Area */}
+              <div className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 md:p-6">
+                {/* File Upload Preview */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mb-3 flex gap-2 flex-wrap">
+                    {uploadedFiles.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-full text-sm"
+                      >
+                        <span className="text-slate-700 dark:text-slate-300">
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setUploadedFiles(uploadedFiles.filter((_, i) => i !== idx))
+                          }
+                          className="hover:text-red-500 text-slate-500 dark:text-slate-400"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Input Bar */}
+                <div className="flex gap-3">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="flex items-center justify-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  >
+                    <Upload size={20} />
+                  </label>
+
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                    placeholder="Ask your coach something..."
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    disabled={isLoading}
+                  />
+
+                  <button
+                    onClick={sendMessage}
+                    disabled={isLoading || !input.trim()}
+                    className="flex items-center justify-center px-4 md:px-6 py-3 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-xl hover:from-blue-600 hover:to-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl font-medium"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <button
+                onClick={createNewThread}
+                className="px-8 py-4 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-xl hover:from-blue-600 hover:to-violet-600 transition-all shadow-lg hover:shadow-xl font-semibold text-lg"
+              >
+                Create your first conversation
+              </button>
             </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <button
-              onClick={createNewThread}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Create a new conversation
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message } = await req.json();
+    const { message, threadId } = await req.json();
     
     if (!message || !message.trim()) {
       return NextResponse.json(
@@ -31,6 +31,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Build request body with optional threadId
+    const requestBody: any = {
+      message: message,
+      user_email: session.user.email,
+    };
+    
+    if (threadId) {
+      requestBody.thread_id = threadId;
+    }
+
     // Call FastAPI SSE endpoint
     const response = await fetch(`${FASTAPI_URL}/llm/chat/stream`, {
       method: "POST",
@@ -38,10 +48,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        message: message,
-        user_email: session.user.email,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
