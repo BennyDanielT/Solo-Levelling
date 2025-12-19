@@ -54,11 +54,7 @@ export default function CoachInterface() {
 
   const loadThreads = async () => {
     try {
-      const res = await fetch("/api/threads", {
-        headers: {
-          Authorization: `Bearer ${session?.user?.email}`,
-        },
-      });
+      const res = await fetch("/api/threads");
 
       if (res.ok) {
         const data = await res.json();
@@ -67,6 +63,8 @@ export default function CoachInterface() {
         if (data.data?.length > 0) {
           loadThread(data.data[0]._id);
         }
+      } else {
+        console.error("Failed to load threads:", res.status);
       }
     } catch (error) {
       console.error("Failed to load threads:", error);
@@ -75,16 +73,14 @@ export default function CoachInterface() {
 
   const loadThread = async (threadId: string) => {
     try {
-      const res = await fetch(`/api/threads/${threadId}`, {
-        headers: {
-          Authorization: `Bearer ${session?.user?.email}`,
-        },
-      });
+      const res = await fetch(`/api/threads/${threadId}`);
 
       if (res.ok) {
         const data = await res.json();
         setCurrentThread(data.data);
         setMessages(data.data.messages || []);
+      } else {
+        console.error("Failed to load thread:", res.status);
       }
     } catch (error) {
       console.error("Failed to load thread:", error);
@@ -97,7 +93,6 @@ export default function CoachInterface() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.user?.email}`,
         },
         body: JSON.stringify({
           title: `Chat - ${new Date().toLocaleString()}`,
@@ -111,9 +106,14 @@ export default function CoachInterface() {
         setCurrentThread(newThread);
         setMessages([]);
         setInput("");
+      } else {
+        const errorText = await res.text();
+        console.error("Failed to create thread:", res.status, errorText);
+        alert("Failed to create conversation");
       }
     } catch (error) {
       console.error("Failed to create thread:", error);
+      alert("Error creating conversation");
     }
   };
 
@@ -124,9 +124,6 @@ export default function CoachInterface() {
     try {
       const res = await fetch(`/api/threads/${threadId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session?.user?.email}`,
-        },
       });
 
       if (res.ok) {
@@ -135,9 +132,13 @@ export default function CoachInterface() {
           setCurrentThread(null);
           setMessages([]);
         }
+      } else {
+        console.error("Failed to delete thread:", res.status);
+        alert("Failed to delete conversation");
       }
     } catch (error) {
       console.error("Failed to delete thread:", error);
+      alert("Error deleting conversation");
     }
   };
 
