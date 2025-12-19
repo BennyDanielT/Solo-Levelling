@@ -1036,57 +1036,134 @@ Keep your response concise and actionable."""
 async def chat_stream_sse(request: ChatRequest, current_user: dict = Depends(get_current_user)):
     """
     Stream chat responses via Server-Sent Events (SSE)
-    Uses LLM service for compatibility with Azure and Ollama
+    Uses Azure AI Foundry agent with function calling
     """
     user_email = current_user.get("email")
     logger.info(f"💬 [CHAT/STREAM] New chat request from {user_email}")
     logger.info(f"💬 [CHAT/STREAM] Message: {request.message}")
+    logger.info(f"🤖 [CHAT/STREAM] Using Azure AI Foundry agent")
     
     async def event_stream():
-        """Stream events to client"""
+        """Stream events to client via Azure agent"""
         try:
-            # Build messages for LLM
-            system_prompt = f"""You are a helpful AI coach and personal development assistant.
-Your role is to help users with their goals, fitness, learning, and personal growth.
-
-Current user email: {user_email}
-
-Provide actionable advice, encouragement, and support for personal development."""
+            # Check if Azure is properly configured
+            if llm_service.provider != "azure" or not llm_service.project_client:
+                logger.warning("❌ Azure provider not initialized")
+                raise Exception("Azure AI Foundry not properly initialized")
             
-            messages = [
-                {"role": "user", "content": request.message}
-            ]
+            agent_id = os.getenv("AZURE_EXISTING_AGENT_ID")
+            if not agent_id:
+                raise Exception("AZURE_EXISTING_AGENT_ID not configured")
             
-            # Get response from LLM service
-            logger.info(f"🤖 [CHAT/STREAM] Using {llm_service.provider} provider")
-            response = await llm_service.chat(
-                messages=messages,
-                system_prompt=system_prompt
+            logger.info(f"🔗 [CHAT/STREAM] Using agent: {agent_id}")
+            
+            # Set up context for agent tools
+            from agent_tools import (
+                get_stock_history, 
+                get_user_goals, 
+                create_goal, 
+                delete_goal, 
+                get_news_by_category,
+                set_user_email
+            )
+            import nest_asyncio
+            nest_asyncio.apply()
+            
+            # Set user email for tool context
+            set_user_email(user_email)
+            logger.info(f"📧 [CHAT/STREAM] User email context set: {user_email}")
+            
+            # Enable auto function calls
+            logger.info("🔧 [CHAT/STREAM] Enabling auto function calls")
+            llm_service.project_client.agents.enable_auto_function_calls(
+                tools={get_stock_history, get_user_goals, create_goal, delete_goal, get_news_by_category},
+                max_retry=5
             )
             
-            logger.info(f"✅ [CHAT/STREAM] Generated response: {response[:100]}...")
+            # Create thread
+            thread = llm_service.project_client.agents.threads.create()
+            thread_id = thread.id
+            logger.info(f"📌 [CHAT/STREAM] Created thread: {thread_id}")
             
-            # Send response in chunks for streaming effect
+            # Add user message to thread
+            llm_service.project_client.agents.messages.create(
+                thread_id=thread_id,
+                role="user",
+                content=request.message
+            )
+            logger.info(f"✉️  [CHAT/STREAM] Added message to thread")
+            
+            # Stream status updates
+            data = json.dumps({
+                "type": "status",
+                "status": "processing",
+                "done": False
+            })
+            yield f"data: {data}\n\n"
+            
+            # Run agent with auto function calls
+            logger.info("🚀 [CHAT/STREAM] Running agent with auto function calls")
+            run = llm_service.project_client.agents.runs.create_and_process(
+                thread_id=thread_id,
+                agent_id=agent_id
+            )
+            
+            logger.info(f"📊 [CHAT/STREAM] Run completed: {run.status}")
+            
+            # Check for errors
+            if run.status == "failed":
+                error_msg = run.last_error.message if run.last_error else "Unknown error"
+                logger.error(f"❌ [CHAT/STREAM] Agent run failed: {error_msg}")
+                raise Exception(f"Agent run failed: {error_msg}")
+            
+            if run.status != "completed":
+                raise Exception(f"Unexpected run status: {run.status}")
+            
+            # Get response messages
+            from azure.ai.agents.models import ListSortOrder
+            messages_list = llm_service.project_client.agents.messages.list(
+                thread_id=thread_id,
+                order=ListSortOrder.ASCENDING
+            )
+            
+            # Find assistant response from this run
+            response_text = ""
+            for message in reversed(list(messages_list)):
+                if message.run_id == run.id and message.text_messages:
+                    response_text = message.text_messages[-1].text.value
+                    logger.info(f"📝 [CHAT/STREAM] Got response: {response_text[:100]}...")
+                    break
+            
+            if not response_text:
+                raise Exception("No assistant response found from agent")
+            
+            # Stream response in chunks
             chunk_size = 50
-            for i in range(0, len(response), chunk_size):
-                chunk = response[i:i+chunk_size]
+            for i in range(0, len(response_text), chunk_size):
+                chunk = response_text[i:i+chunk_size]
                 data = json.dumps({
                     "type": "text",
                     "content": chunk,
                     "done": False
                 })
                 yield f"data: {data}\n\n"
-                await asyncio.sleep(0.02)  # Small delay for streaming effect
+                await asyncio.sleep(0.02)
             
             # Send completion signal
             done_data = json.dumps({
                 "type": "complete",
-                "done": True
+                "done": True,
+                "thread_id": thread_id,
+                "run_id": run.id
             })
             yield f"data: {done_data}\n\n"
             
+            logger.info(f"✅ [CHAT/STREAM] Stream completed successfully")
+            
         except Exception as e:
             logger.error(f"💥 [CHAT/STREAM] Error in stream: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             error_data = json.dumps({
                 "type": "error",
                 "error": str(e)
