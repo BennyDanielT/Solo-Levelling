@@ -29,6 +29,29 @@ def get_user_email() -> str:
     return email
 
 
+def _run_async(coro):
+    """
+    Helper to run async code from sync context.
+    Safely handles event loop creation/reuse without conflicts.
+    """
+    try:
+        # Try to get the running loop (will raise if no loop is running)
+        loop = asyncio.get_running_loop()
+        # If we're already in an async context, we can't use asyncio.run()
+        # This shouldn't happen with Azure Agent, but just in case
+        raise RuntimeError("Cannot run async code from within running event loop")
+    except RuntimeError as e:
+        if "no running event loop" in str(e).lower():
+            # No running loop, safe to use asyncio.run()
+            return asyncio.run(coro)
+        else:
+            # Already in event loop, create new thread
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, coro)
+                return future.result()
+
+
 # ==================== STOCK TOOLS ====================
 
 def get_stock_history(symbol: str, period: str = "1mo") -> str:
@@ -41,7 +64,7 @@ def get_stock_history(symbol: str, period: str = "1mo") -> str:
     """
     logger.info(f"📊 [AGENT_TOOLS] get_stock_history({symbol}, {period})")
     try:
-        result = asyncio.run(StockService.get_stock_history(symbol.upper(), period))
+        result = _run_async(StockService.get_stock_history(symbol.upper(), period))
         if not result:
             return json.dumps({"success": False, "error": f"No data found for {symbol}"})
         logger.info(f"✅ Got {len(result.get('history', []))} data points")
@@ -63,7 +86,7 @@ def get_user_goals() -> str:
     try:
         user_email = get_user_email()
         logger.info(f"🎯 [AGENT_TOOLS] get_user_goals() for {user_email}")
-        result = asyncio.run(GoalService.get_user_goals(user_email))
+        result = _run_async(GoalService.get_user_goals(user_email))
         logger.info(f"✅ Got {len(result.get('data', []))} goals")
         return json.dumps(result, default=str)
     except Exception as e:
@@ -87,7 +110,7 @@ def create_goal(title: str, description: str = "", category: str = "personal",
     try:
         user_email = get_user_email()
         logger.info(f"🎯 [AGENT_TOOLS] create_goal({title}) for {user_email}")
-        result = asyncio.run(GoalService.create_goal(
+        result = _run_async(GoalService.create_goal(
             user_email=user_email,
             title=title,
             description=description,
@@ -113,7 +136,7 @@ def delete_goal(goal_id: str) -> str:
     try:
         user_email = get_user_email()
         logger.info(f"🎯 [AGENT_TOOLS] delete_goal({goal_id}) for {user_email}")
-        result = asyncio.run(GoalService.delete_goal(user_email, goal_id))
+        result = _run_async(GoalService.delete_goal(user_email, goal_id))
         logger.info(f"✅ Goal deleted")
         return json.dumps(result)
     except Exception as e:
@@ -133,7 +156,7 @@ def get_news_by_category(category: str, limit: int = 10) -> str:
     """
     logger.info(f"📰 [AGENT_TOOLS] get_news_by_category({category}, limit={limit})")
     try:
-        articles = asyncio.run(NewsService.get_news_by_category(category, limit))
+        articles = _run_async(NewsService.get_news_by_category(category, limit))
         logger.info(f"✅ Got {len(articles)} articles")
         return json.dumps({
             "success": True, 
