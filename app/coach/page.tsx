@@ -2,8 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
-import ChatInterface from '@/components/ChatInterface';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import CoachInterface from '@/components/coach/CoachInterface';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,11 +27,6 @@ export default function CoachPage() {
     );
   }
 
-  return (
-    <DashboardLayout onAddGoal={() => {}}>
-      <div className='max-w-5xl mx-auto'>
-        <ChatInterface />
-      </div>
-    </DashboardLayout>
-  );
+  return <CoachInterface />;
 }
+

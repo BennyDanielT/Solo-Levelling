@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from azure.ai.agents import AgentsClient
 from azure.identity import DefaultAzureCredential
 from datetime import datetime, timedelta
@@ -8,10 +9,12 @@ import os
 import sys
 from dotenv import load_dotenv
 import time
+import json
+import asyncio
 from loguru import logger
 
 from database import (
-    db, users_collection, goals_collection, achievements_collection, ping_db
+    db, users_collection, goals_collection, achievements_collection, chat_threads_collection, ping_db
 )
 from models import (
     UserRegister, UserResponse, UserInDB,
@@ -1029,6 +1032,82 @@ Keep your response concise and actionable."""
         logger.error(f"❌ [LLM] Goal suggestion error: {e}")
         raise HTTPException(status_code=500, detail=f"Goal suggestion failed: {str(e)}")
 
+@app.post("/llm/chat/stream")
+async def chat_stream_sse(request: ChatRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Stream chat responses via Server-Sent Events (SSE)
+    Uses LLM service for compatibility with Azure and Ollama
+    """
+    user_email = current_user.get("email")
+    logger.info(f"💬 [CHAT/STREAM] New chat request from {user_email}")
+    logger.info(f"💬 [CHAT/STREAM] Message: {request.message}")
+    
+    async def event_stream():
+        """Stream events to client"""
+        try:
+            # Build messages for LLM
+            system_prompt = f"""You are a helpful AI coach and personal development assistant.
+Your role is to help users with their goals, fitness, learning, and personal growth.
+
+Current user email: {user_email}
+
+Provide actionable advice, encouragement, and support for personal development."""
+            
+            messages = [
+                {"role": "user", "content": request.message}
+            ]
+            
+            # Get response from LLM service
+            logger.info(f"🤖 [CHAT/STREAM] Using {llm_service.provider} provider")
+            response = await llm_service.chat(
+                messages=messages,
+                system_prompt=system_prompt
+            )
+            
+            logger.info(f"✅ [CHAT/STREAM] Generated response: {response[:100]}...")
+            
+            # Send response in chunks for streaming effect
+            chunk_size = 50
+            for i in range(0, len(response), chunk_size):
+                chunk = response[i:i+chunk_size]
+                data = json.dumps({
+                    "type": "text",
+                    "content": chunk,
+                    "done": False
+                })
+                yield f"data: {data}\n\n"
+                await asyncio.sleep(0.02)  # Small delay for streaming effect
+            
+            # Send completion signal
+            done_data = json.dumps({
+                "type": "complete",
+                "done": True
+            })
+            yield f"data: {done_data}\n\n"
+            
+        except Exception as e:
+            logger.error(f"💥 [CHAT/STREAM] Error in stream: {e}")
+            error_data = json.dumps({
+                "type": "error",
+                "error": str(e)
+            })
+            yield f"data: {error_data}\n\n"
+    
+    try:
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive"
+            }
+        )
+    except Exception as e:
+        logger.error(f"❌ [CHAT/STREAM] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Chat stream failed: {str(e)}")
+
+
 @app.get("/llm/health")
 async def llm_health_check():
     """Check LLM service health"""
@@ -1045,3 +1124,167 @@ async def llm_health_check():
             "success": False,
             "error": str(e)
         }
+
+
+# ==================== CHAT THREAD ROUTES ====================
+
+@app.get("/threads")
+async def list_threads(current_user: dict = Depends(get_current_user)):
+    """List all chat threads for the current user"""
+    user_email = current_user.get("email")
+    logger.info(f"📋 [THREADS] Listing threads for {user_email}")
+    
+    try:
+        threads = await chat_threads_collection.find(
+            {"user_email": user_email}
+        ).sort("updated_at", -1).to_list(length=50)
+        
+        # Convert ObjectId to string
+        for thread in threads:
+            thread["_id"] = str(thread["_id"])
+            thread["created_at"] = thread.get("created_at", "").isoformat() if thread.get("created_at") else ""
+            thread["updated_at"] = thread.get("updated_at", "").isoformat() if thread.get("updated_at") else ""
+        
+        logger.info(f"✅ Found {len(threads)} threads")
+        return {
+            "success": True,
+            "data": threads
+        }
+    except Exception as e:
+        logger.error(f"❌ [THREADS] Error listing threads: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/threads")
+async def create_thread(data: dict, current_user: dict = Depends(get_current_user)):
+    """Create a new chat thread"""
+    user_email = current_user.get("email")
+    title = data.get("title", "New Chat")
+    
+    logger.info(f"➕ [THREADS] Creating new thread for {user_email}: {title}")
+    
+    try:
+        thread = {
+            "user_email": user_email,
+            "title": title,
+            "messages": [],
+            "file_references": [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        result = await chat_threads_collection.insert_one(thread)
+        thread["_id"] = str(result.inserted_id)
+        
+        logger.info(f"✅ Created thread: {thread['_id']}")
+        return {
+            "success": True,
+            "data": thread
+        }
+    except Exception as e:
+        logger.error(f"❌ [THREADS] Error creating thread: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/threads/{thread_id}")
+async def get_thread(thread_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific chat thread"""
+    user_email = current_user.get("email")
+    logger.info(f"📖 [THREADS] Getting thread {thread_id} for {user_email}")
+    
+    try:
+        thread = await chat_threads_collection.find_one({
+            "_id": ObjectId(thread_id),
+            "user_email": user_email
+        })
+        
+        if not thread:
+            logger.warning(f"⚠️  [THREADS] Thread not found: {thread_id}")
+            raise HTTPException(status_code=404, detail="Thread not found")
+        
+        thread["_id"] = str(thread["_id"])
+        logger.info(f"✅ Retrieved thread with {len(thread.get('messages', []))} messages")
+        return {
+            "success": True,
+            "data": thread
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ [THREADS] Error getting thread: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/threads/{thread_id}")
+async def delete_thread(thread_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a chat thread"""
+    user_email = current_user.get("email")
+    logger.info(f"🗑️  [THREADS] Deleting thread {thread_id} for {user_email}")
+    
+    try:
+        result = await chat_threads_collection.delete_one({
+            "_id": ObjectId(thread_id),
+            "user_email": user_email
+        })
+        
+        if result.deleted_count == 0:
+            logger.warning(f"⚠️  [THREADS] Thread not found for deletion: {thread_id}")
+            raise HTTPException(status_code=404, detail="Thread not found")
+        
+        logger.info(f"✅ Deleted thread: {thread_id}")
+        return {
+            "success": True,
+            "message": f"Thread {thread_id} deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ [THREADS] Error deleting thread: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/threads/{thread_id}/messages")
+async def add_message_to_thread(
+    thread_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Add a message to a thread"""
+    user_email = current_user.get("email")
+    message_content = data.get("message")
+    sender = data.get("sender", "user")  # "user" or "assistant"
+    
+    logger.info(f"💬 [THREADS] Adding message to thread {thread_id}")
+    
+    try:
+        message = {
+            "role": sender,
+            "content": message_content,
+            "timestamp": datetime.utcnow()
+        }
+        
+        result = await chat_threads_collection.update_one(
+            {
+                "_id": ObjectId(thread_id),
+                "user_email": user_email
+            },
+            {
+                "$push": {"messages": message},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        if result.matched_count == 0:
+            logger.warning(f"⚠️  [THREADS] Thread not found: {thread_id}")
+            raise HTTPException(status_code=404, detail="Thread not found")
+        
+        logger.info(f"✅ Message added to thread")
+        return {
+            "success": True,
+            "data": message
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ [THREADS] Error adding message: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

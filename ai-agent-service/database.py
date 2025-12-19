@@ -18,6 +18,7 @@ users_collection = db.users
 goals_collection = db.goals
 achievements_collection = db.achievements
 sessions_collection = db.sessions
+chat_threads_collection = db.chat_threads
 
 async def ping_db():
     """Test database connection"""
