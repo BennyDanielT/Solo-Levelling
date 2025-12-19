@@ -5,9 +5,10 @@ const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:800
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -17,7 +18,7 @@ export async function GET(
       });
     }
 
-    const response = await fetch(`${FASTAPI_URL}/threads/${params.id}`, {
+    const response = await fetch(`${FASTAPI_URL}/threads/${id}`, {
       headers: {
         Authorization: `Bearer ${session.user.email}`,
       },

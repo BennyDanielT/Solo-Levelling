@@ -6,14 +6,23 @@ import { Loader2, Send, Sparkles } from "lucide-react";
 import { useChat } from "@/lib/hooks/useChat";
 
 export default function ChatInterface() {
-  const { messages, input, setInput, sendMessage, isLoading, error, clearMessages } = useChat();
+  const {
+    messages,
+    input,
+    setInput,
+    handleSubmit: handleChatSubmit,
+    isLoading,
+    error,
+    clearMessages,
+  } = useChat();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    
-    await sendMessage();
+
+    await handleChatSubmit(e as any);
   };
 
   const scrollToBottom = () => {

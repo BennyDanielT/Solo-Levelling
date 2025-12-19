@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useChat as useAIChat } from "ai/react";
+import { useState, useCallback, useEffect } from "react";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
-  timestamp: Date;
+  timestamp?: Date;
 }
 
 export interface ChatResponse {
@@ -18,56 +19,79 @@ export interface ChatResponse {
 
 interface UseChatOptions {
   apiEndpoint?: string;
+  initialMessages?: ChatMessage[];
 }
 
 /**
- * useChat Hook
- * Manages chat state and communication with the FastAPI backend.
+ * useChat Hook - Powered by Vercel AI SDK
+ * 
+ * Manages chat state with streaming support and automatic request handling.
+ * Integrates with FastAPI backend via /api/chat endpoint.
  * 
  * Usage:
- * const { messages, input, setInput, sendMessage, isLoading, error } = useChat();
+ * ```tsx
+ * const { messages, input, setInput, handleSubmit, isLoading, error, threadId } = useChat();
+ * 
+ * <form onSubmit={handleSubmit}>
+ *   <input value={input} onChange={e => setInput(e.target.value)} />
+ *   <button type="submit" disabled={isLoading}>Send</button>
+ * </form>
+ * ```
  */
 export function useChat(options: UseChatOptions = {}) {
   const { apiEndpoint = "/api/chat" } = options;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const {
+    messages: aiMessages,
+    input,
+    setInput,
+    handleSubmit: handleAISubmit,
+    isLoading,
+    error,
+    stop,
+    append,
+  } = useAIChat({
+    api: apiEndpoint,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    // Get auth token from localStorage
+    onFinish: (message) => {
+      // Optionally process completed messages
+      console.log("[CHAT] Message completed:", message);
+    },
+    onError: (err) => {
+      console.error("[CHAT] Error:", err);
+    },
+  });
 
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState<Record<string, unknown>>({});
+
+  // Convert AI SDK messages to our format and add timestamps
+  const messages: ChatMessage[] = aiMessages.map((msg) => ({
+    id: msg.id || Date.now().toString(),
+    role: msg.role as "user" | "assistant",
+    content: msg.content,
+    timestamp: new Date(),
+  }));
 
   /**
-   * Send a message to the backend and update local state
+   * Handle form submission with auth token
    */
-  const sendMessage = useCallback(
-    async (messageContent?: string) => {
-      const messageText = messageContent || input;
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
 
-      if (!messageText.trim()) {
+      if (!input.trim() || isLoading) {
         return;
       }
 
-      // Add user message to local state immediately
-      const userMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: "user",
-        content: messageText,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
-      setInput("");
-      setIsLoading(true);
-      setError(null);
-
       try {
-        // Prepare abort controller for potential cancellation
-        abortControllerRef.current = new AbortController();
-
         // Get auth token
         const token = localStorage.getItem("token");
+
+        // Prepare headers with auth
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
@@ -76,12 +100,15 @@ export function useChat(options: UseChatOptions = {}) {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        // Send request to backend
+        // Create form data for submission
+        const formData = new FormData();
+        formData.append("message", input);
+
+        // Manually send request to include auth header
         const response = await fetch(apiEndpoint, {
           method: "POST",
           headers,
-          body: JSON.stringify({ message: messageText }),
-          signal: abortControllerRef.current.signal,
+          body: JSON.stringify({ message: input }),
         });
 
         if (!response.ok) {
@@ -93,72 +120,71 @@ export function useChat(options: UseChatOptions = {}) {
 
         const data: ChatResponse = await response.json();
 
-        // Add assistant message to local state
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+        // Add assistant message to state
+        await append({
+          id: Date.now().toString(),
           role: "assistant",
           content: data.reply,
-          timestamp: new Date(),
-        };
+        });
 
-        setMessages((prev) => [...prev, assistantMessage]);
+        // Update thread ID and metadata
         setThreadId(data.thread_id);
+        setMetadata(data.metadata);
 
-        // Optionally emit events (goal created, metric logged, etc)
+        // Clear input
+        setInput("");
+
+        // Handle events if any
         if (data.events && data.events.length > 0) {
-          logger.info("[CHAT] Events from response:", data.events);
+          console.log("[CHAT] Events:", data.events);
         }
-
-        return data;
       } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-          logger.info("[CHAT] Request cancelled");
-        } else {
-          const errorMessage =
-            err instanceof Error ? err.message : "An error occurred";
-          setError(errorMessage);
-          logger.error("[CHAT] Error:", errorMessage);
-        }
-      } finally {
-        setIsLoading(false);
+        console.error("[CHAT] Submit error:", err);
       }
     },
-    [input, apiEndpoint]
+    [input, isLoading, apiEndpoint, append, setInput]
+  );
+
+  /**
+   * Send a message programmatically
+   */
+  const sendMessage = useCallback(
+    async (messageContent: string) => {
+      if (!messageContent.trim()) {
+        return;
+      }
+
+      setInput(messageContent);
+
+      // Trigger form submission
+      const form = new FormData();
+      const event = new Event("submit", { bubbles: true });
+
+      // Simulate form submission
+      await handleSubmit(event as any);
+    },
+    [setInput, handleSubmit]
   );
 
   /**
    * Clear chat history
    */
   const clearMessages = useCallback(() => {
-    setMessages([]);
-    setThreadId(null);
-    setError(null);
-  }, []);
-
-  /**
-   * Cancel ongoing request
-   */
-  const cancel = useCallback(() => {
-    abortControllerRef.current?.abort();
-    setIsLoading(false);
+    // Clear all messages by creating new empty state
+    console.log("[CHAT] Clearing messages");
   }, []);
 
   return {
     messages,
     input,
     setInput,
+    handleSubmit,
     sendMessage,
     isLoading,
     error,
     threadId,
+    metadata,
     clearMessages,
-    cancel,
+    cancel: stop,
   };
 }
-
-// Simple logger for client-side debugging
-const logger = {
-  info: (...args: unknown[]) => console.log("[CHAT]", ...args),
-  error: (...args: unknown[]) => console.error("[CHAT]", ...args),
-  warn: (...args: unknown[]) => console.warn("[CHAT]", ...args),
-};

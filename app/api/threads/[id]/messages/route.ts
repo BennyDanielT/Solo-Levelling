@@ -5,9 +5,10 @@ const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:800
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -19,7 +20,7 @@ export async function POST(
 
     const body = await request.json();
 
-    const response = await fetch(`${FASTAPI_URL}/threads/${params.id}/messages`, {
+    const response = await fetch(`${FASTAPI_URL}/threads/${id}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
