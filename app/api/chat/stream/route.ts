@@ -1,56 +1,72 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
 const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-
+    
     if (!session?.user?.email) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, threadId, chatHistory } = await request.json();
+    const { message } = await req.json();
+    
+    if (!message || !message.trim()) {
+      return NextResponse.json(
+        { error: "Message is required" },
+        { status: 400 }
+      );
+    }
+    
+    // Get token from session
+    const token = (session as any).accessToken;
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: "No authentication token available" },
+        { status: 401 }
+      );
+    }
 
-    // Stream response from FastAPI SSE endpoint
+    // Call FastAPI SSE endpoint
     const response = await fetch(`${FASTAPI_URL}/llm/chat/stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.user.email}`,
+        "Authorization": `Bearer ${token}`,
       },
       body: JSON.stringify({
-        message,
-        thread_id: threadId,
-        chat_history: chatHistory || [],
+        message: message,
+        user_email: session.user.email,
       }),
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Failed to stream" }), {
-        status: response.status,
-        headers: { "Content-Type": "application/json" },
-      });
+      const error = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: error.detail || "Failed to stream response" },
+        { status: response.status }
+      );
     }
 
-    // Return the streaming response
+    // Pipe the SSE stream directly to the client
     return new Response(response.body, {
-      status: 200,
+      status: response.status,
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
       },
     });
   } catch (error) {
-    console.error("Chat stream error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Chat stream API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

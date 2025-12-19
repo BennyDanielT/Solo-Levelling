@@ -30,6 +30,9 @@ from news import NewsService
 from llm_service import llm_service
 from goal_service import GoalService
 
+# Import API routers for clean architecture
+from api import chat_router, goals_router, user_router
+
 load_dotenv()
 
 # Configure loguru
@@ -59,6 +62,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers for clean architecture
+app.include_router(chat_router)
+app.include_router(goals_router)
+app.include_router(user_router)
 
 # Azure AI Configuration
 PROJECT_ENDPOINT = os.getenv("AZURE_AI_PROJECT_ENDPOINT", "")

@@ -3,92 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Message } from "./Message";
 import { Loader2, Send, Sparkles } from "lucide-react";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+import { useChat } from "@/lib/hooks/useChat";
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const { messages, input, setInput, sendMessage, isLoading, error, clearMessages } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Get auth token from localStorage
-      const token = localStorage.getItem("token");
-      
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to get response");
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let assistantMessage = "";
-
-      const assistantMessageObj: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "",
-      };
-      setMessages((prev) => [...prev, assistantMessageObj]);
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          assistantMessage += chunk;
-
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageObj.id
-                ? { ...msg, content: assistantMessage }
-                : msg
-            )
-          );
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
+    
+    await sendMessage();
   };
 
   const scrollToBottom = () => {
