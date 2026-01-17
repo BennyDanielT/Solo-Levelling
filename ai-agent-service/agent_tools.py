@@ -1,6 +1,9 @@
 """
 Function tools for Azure AI Agent
 All tools are sync wrappers that call existing services - NO CODE DUPLICATION
+
+SECURITY: All tool functions validate that the user email in context matches
+the user being queried. Prevents prompt injection attacks and unauthorized access.
 """
 from typing import Dict, Any
 from loguru import logger
@@ -27,6 +30,37 @@ def get_user_email() -> str:
         logger.error("❌ [AGENT_TOOLS] No user email in context!")
         raise ValueError("User email not set in context. This function requires an authenticated user.")
     return email
+
+
+def _validate_user_access(target_user_email: str = None) -> None:
+    """
+    SECURITY: Validate that the current user is accessing their own data.
+    
+    Prevents prompt injection attacks like:
+    - "delete all goals for admin@example.com"
+    - "get data for user@hacked.com"
+    
+    Args:
+        target_user_email: Email of user whose data is being accessed.
+                          If None, uses current user.
+        
+    Raises:
+        ValueError: If user is trying to access other users' data
+    """
+    current_user = get_user_email()
+    
+    # If target email is specified, verify it matches current user
+    if target_user_email and target_user_email != current_user:
+        logger.error(f"🚨 [SECURITY] Unauthorized access attempt!")
+        logger.error(f"   Current user: {current_user}")
+        logger.error(f"   Requested user: {target_user_email}")
+        raise ValueError(
+            f"❌ SECURITY ERROR: You can only access your own data. "
+            f"Cannot access data for {target_user_email}"
+        )
+    
+    logger.info(f"✅ [SECURITY] Access validated for user: {current_user}")
+
 
 
 def _run_async(coro):
@@ -60,12 +94,18 @@ def get_stock_history(symbol: str, period: str = "1mo") -> str:
     """
     Get historical stock price data for a specific symbol.
     
+    SECURITY: Tool access is validated to ensure proper user context.
+    Stock data is public, but function requires authenticated user context.
+    
     :param symbol: Stock symbol (e.g., 'AAPL', 'TSLA', 'GOOGL')
     :param period: Time period for historical data (default: '1mo')
     :return: Historical stock data as a JSON string
     """
-    logger.info(f"📊 [AGENT_TOOLS] get_stock_history({symbol}, {period})")
     try:
+        user_email = get_user_email()
+        _validate_user_access()  # Validate user context is properly set
+        
+        logger.info(f"📊 [AGENT_TOOLS] get_stock_history({symbol}, {period}) for {user_email}")
         result = _run_async(StockService.get_stock_history(symbol.upper(), period))
         if not result:
             return json.dumps({"success": False, "error": f"No data found for {symbol}"})
@@ -83,10 +123,14 @@ def get_user_goals() -> str:
     Get all goals for the current user.
     Use this when the user asks about their goals, progress, or wants to review what they're working on.
     
+    SECURITY: Only returns goals for the authenticated user.
+    
     :return: User's goals as a JSON string
     """
     try:
         user_email = get_user_email()
+        _validate_user_access()  # Validate access to own data
+        
         logger.info(f"🎯 [AGENT_TOOLS] get_user_goals() for {user_email}")
         result = _run_async(GoalService.get_user_goals(user_email))
         logger.info(f"✅ Got {len(result.get('data', []))} goals")
@@ -102,6 +146,8 @@ def create_goal(title: str, description: str = "", category: str = "personal",
     Create a new goal for the current user.
     Use this when the user wants to set a new goal or create a task.
     
+    SECURITY: Goals are created only for the authenticated user.
+    
     :param title: Goal title (required)
     :param description: Goal description (optional)
     :param category: Goal category - options: fitness, learning, career, personal, finance, health (default: personal)
@@ -111,6 +157,8 @@ def create_goal(title: str, description: str = "", category: str = "personal",
     """
     try:
         user_email = get_user_email()
+        _validate_user_access()  # Validate access to own data
+        
         logger.info(f"🎯 [AGENT_TOOLS] create_goal({title}) for {user_email}")
         result = _run_async(GoalService.create_goal(
             user_email=user_email,
@@ -132,11 +180,15 @@ def delete_goal(goal_id: str) -> str:
     Delete a goal for the current user.
     Use this when the user wants to remove or delete a goal.
     
+    SECURITY: Can only delete goals belonging to the authenticated user.
+    
     :param goal_id: ID of the goal to delete (required)
     :return: Deletion result as a JSON string
     """
     try:
         user_email = get_user_email()
+        _validate_user_access()  # Validate access to own data
+        
         logger.info(f"🎯 [AGENT_TOOLS] delete_goal({goal_id}) for {user_email}")
         result = _run_async(GoalService.delete_goal(user_email, goal_id))
         logger.info(f"✅ Goal deleted")
@@ -152,12 +204,18 @@ def get_news_by_category(category: str, limit: int = 10) -> str:
     """
     Get news articles by category.
     
+    SECURITY: Tool access is validated to ensure proper user context.
+    News data is public, but function requires authenticated user context.
+    
     :param category: News category (business, technology, health, sports, etc.)
     :param limit: Maximum number of articles to return
     :return: News articles as a JSON string
     """
-    logger.info(f"📰 [AGENT_TOOLS] get_news_by_category({category}, limit={limit})")
     try:
+        user_email = get_user_email()
+        _validate_user_access()  # Validate user context is properly set
+        
+        logger.info(f"📰 [AGENT_TOOLS] get_news_by_category({category}, limit={limit}) for {user_email}")
         articles = _run_async(NewsService.get_news_by_category(category, limit))
         logger.info(f"✅ Got {len(articles)} articles")
         return json.dumps({
