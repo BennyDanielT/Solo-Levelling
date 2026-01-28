@@ -61,8 +61,8 @@ class ThreadService:
             })
             
             if thread:
-                logger.info(f"✅ Found existing thread for {user_email}: {thread['threadId']}")
-                return thread["threadId"]
+                logger.info(f"✅ Found existing thread for {user_email}: {thread['_id']}")
+                return str(thread["_id"])
             
             # Create a new thread (Azure thread will be created on first message)
             new_thread = {

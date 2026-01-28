@@ -89,6 +89,24 @@ services:
     #           count: 1
     #           capabilities: [gpu]
 
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: solo-leveling-n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=${N8N_HOST:-n8n.maxeffortgazette.com}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${N8N_HOST:-n8n.maxeffortgazette.com}/
+      - GENERIC_TIMEZONE=${TIMEZONE:-America/New_York}
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    networks:
+      - solo-leveling-network
+
   app:
     build:
       context: .

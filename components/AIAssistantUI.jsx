@@ -65,6 +65,13 @@ export default function AIAssistantUI() {
     e.preventDefault()
     if (!input.trim() || !activeConversation) return
 
+    const userMessage = { role: "user", content: input.trim() }
+    const currentInput = input.trim()
+    
+    // Optimistically add user message
+    setMessages(prev => [...prev, userMessage])
+    setInput("")
+
     try {
       setIsLoading(true)
       const response = await fetch("/api/chat", {
@@ -72,17 +79,26 @@ export default function AIAssistantUI() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           threadId: activeConversation._id,
-          message: input,
+          message: currentInput,
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        setMessages(data.messages || [])
-        setInput("")
+        // Add assistant reply to messages
+        if (data.reply) {
+          setMessages(prev => [...prev, { role: "assistant", content: data.reply }])
+        }
+      } else {
+        // Remove optimistic message on error
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("Chat error:", errorData)
+        setMessages(prev => prev.slice(0, -1))
       }
     } catch (error) {
       console.error("Failed to send message:", error)
+      // Remove optimistic message on error
+      setMessages(prev => prev.slice(0, -1))
     } finally {
       setIsLoading(false)
     }
