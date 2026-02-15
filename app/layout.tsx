@@ -82,8 +82,10 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+        <meta name="theme-color" content="#8B5CF6" />
       </head>
       <body className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white'>
         <SessionProvider>
