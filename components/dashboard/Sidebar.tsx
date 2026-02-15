@@ -29,8 +29,6 @@ export const navigationItems = [
   { name: 'Goals', href: '/goals', icon: TargetIcon },
   { name: 'Coach', href: '/coach', icon: MixIcon },
   { name: 'Stocks', href: '/stocks', icon: RocketIcon },
-  { name: 'Achievements', href: '/achievements', icon: CheckCircledIcon },
-  { name: 'Reminders', href: '/reminders', icon: BellIcon },
   { name: 'Analytics', href: '/analytics', icon: BarChartIcon },
   { name: 'Profile', href: '/profile', icon: PersonIcon },
   { name: 'Settings', href: '/settings', icon: GearIcon },
