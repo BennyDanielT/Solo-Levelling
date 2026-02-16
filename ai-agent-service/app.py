@@ -524,6 +524,39 @@ async def get_dashboard_metrics(current_user: dict = Depends(get_current_user)):
 
 # ==================== GOALS ROUTES ====================
 
+@app.get("/debug/all-goals")
+async def debug_all_goals():
+    """DEBUG: Get all goals from database to diagnose user ID issues"""
+    try:
+        goals_cursor = goals_collection.find({})
+        goals = await goals_cursor.to_list(length=100)
+        
+        # Get all unique userIds
+        user_ids = set()
+        for goal in goals:
+            goal["_id"] = str(goal["_id"])
+            user_ids.add(goal.get("userId"))
+        
+        # Get users for those IDs
+        users_info = {}
+        for uid in user_ids:
+            if uid:
+                from bson import ObjectId
+                try:
+                    user = await users_collection.find_one({"_id": ObjectId(uid)})
+                    if user:
+                        users_info[uid] = user.get("email", "unknown")
+                except:
+                    users_info[uid] = "invalid_id"
+        
+        return {
+            "total_goals": len(goals),
+            "goals": goals,
+            "user_ids_with_emails": users_info
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/goals")
 async def get_goals(current_user: dict = Depends(get_current_user)):
     """Get all goals for current user"""
