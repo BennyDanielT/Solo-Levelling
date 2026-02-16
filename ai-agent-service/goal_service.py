@@ -26,7 +26,31 @@ class GoalService:
         try:
             user = await users_collection.find_one({"email": user_email})
             if not user:
-                return {"success": False, "error": "User not found"}
+                # Auto-create user if they don't exist (OAuth users may not have been synced)
+                logger.info(f"🆕 User not found, auto-creating: {user_email}")
+                from datetime import datetime
+                user_doc = {
+                    "name": user_email.split("@")[0],
+                    "email": user_email,
+                    "username": None,
+                    "password": None,
+                    "level": 1,
+                    "totalPoints": 0,
+                    "rank": "E",
+                    "title": "Awakened Hunter",
+                    "loginPlatform": "google",
+                    "emailVerified": True,
+                    "joinedAt": datetime.utcnow(),
+                    "lastActive": datetime.utcnow(),
+                    "preferences": {
+                        "theme": "dark",
+                        "notifications": True,
+                        "language": "en"
+                    }
+                }
+                result = await users_collection.insert_one(user_doc)
+                user = await users_collection.find_one({"_id": result.inserted_id})
+                logger.info(f"✅ Auto-created user: {user_email}")
             
             goals_cursor = goals_collection.find({"userId": str(user["_id"])}).sort("createdAt", -1)
             goals = await goals_cursor.to_list(length=100)
@@ -68,7 +92,30 @@ class GoalService:
         try:
             user = await users_collection.find_one({"email": user_email})
             if not user:
-                return {"success": False, "error": "User not found"}
+                # Auto-create user if they don't exist (OAuth users may not have been synced)
+                logger.info(f"🆕 User not found, auto-creating for goal: {user_email}")
+                user_doc = {
+                    "name": user_email.split("@")[0],
+                    "email": user_email,
+                    "username": None,
+                    "password": None,
+                    "level": 1,
+                    "totalPoints": 0,
+                    "rank": "E",
+                    "title": "Awakened Hunter",
+                    "loginPlatform": "google",
+                    "emailVerified": True,
+                    "joinedAt": datetime.utcnow(),
+                    "lastActive": datetime.utcnow(),
+                    "preferences": {
+                        "theme": "dark",
+                        "notifications": True,
+                        "language": "en"
+                    }
+                }
+                result = await users_collection.insert_one(user_doc)
+                user = await users_collection.find_one({"_id": result.inserted_id})
+                logger.info(f"✅ Auto-created user: {user_email}")
             
             goal_doc = {
                 "title": title,
