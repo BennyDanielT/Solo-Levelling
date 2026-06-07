@@ -252,6 +252,73 @@ def delete_goal(goal_id: str) -> str:
         })
 
 
+def update_goal(goal_id: str, title: str = None, description: str = None, category: str = None, 
+                priority: str = None, target_date: str = None, status: str = None, 
+                completed: bool = None, progress: int = None) -> str:
+    """
+    Update a goal's details, progress, or mark it as complete.
+    Use this when the user wants to update their goal, change description/title/category/priority,
+    set/change progress, or mark it as complete.
+    
+    SECURITY: Can only update goals belonging to the authenticated user.
+    
+    :param goal_id: ID of the goal to update (required)
+    :param title: New title for the goal (optional)
+    :param description: New description for the goal (optional)
+    :param category: New category for the goal (optional)
+    :param priority: New priority level (optional)
+    :param target_date: New target date in ISO format YYYY-MM-DD (optional)
+    :param status: New status of the goal - e.g., 'active', 'completed' (optional)
+    :param completed: Set to True to mark the goal as complete (optional)
+    :param progress: New progress percentage 0-100 (optional)
+    :return: Update result as a JSON string
+    """
+    try:
+        user_email = get_user_email()
+        _validate_user_access()  # Validate access to own data
+        
+        logger.info(f"🎯 [AGENT_TOOLS] update_goal({goal_id}) for {user_email}")
+        
+        update_data = {}
+        if title is not None:
+            update_data["title"] = title
+        if description is not None:
+            update_data["description"] = description
+        if category is not None:
+            update_data["category"] = category
+        if priority is not None:
+            update_data["priority"] = priority
+        if target_date is not None:
+            update_data["targetDate"] = target_date
+        if status is not None:
+            update_data["status"] = status
+        if completed is not None:
+            update_data["completed"] = completed
+        if progress is not None:
+            update_data["progress"] = progress
+            
+        result = _run_async(GoalService.update_goal(user_email, goal_id, update_data))
+        
+        if not result.get("success"):
+            logger.warning(f"⚠️ Failed to update goal: {result.get('error')}")
+            return json.dumps({
+                "updated": False,
+                "message": f"Could not update goal: {result.get('error', 'Goal not found or access denied')}"
+            })
+        
+        logger.info(f"✅ Goal updated successfully")
+        return json.dumps({
+            "updated": True,
+            "message": f"Successfully updated goal with ID: {goal_id}"
+        })
+    except Exception as e:
+        logger.error(f"💥 Error: {str(e)}")
+        return json.dumps({
+            "updated": False,
+            "message": f"Error updating goal: {str(e)}"
+        })
+
+
 # ==================== NEWS TOOLS ====================
 
 def get_news_by_category(category: str, limit: int = 10) -> str:
@@ -385,6 +452,58 @@ class AgentTools:
                             "goal_id": {
                                 "type": "string",
                                 "description": "ID of the goal to delete"
+                            }
+                        },
+                        "required": ["goal_id"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "update_goal",
+                    "description": "Update an existing goal's details, progress, or mark it as complete. Use this when the user wants to modify a goal, complete a goal, or record progress.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "goal_id": {
+                                "type": "string",
+                                "description": "ID of the goal to update"
+                            },
+                            "title": {
+                                "type": "string",
+                                "description": "New title for the goal"
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "New detailed description"
+                            },
+                            "category": {
+                                "type": "string",
+                                "enum": ["fitness", "learning", "career", "personal", "finance", "health"],
+                                "description": "New goal category"
+                            },
+                            "priority": {
+                                "type": "string",
+                                "enum": ["low", "medium", "high"],
+                                "description": "New goal priority level"
+                            },
+                            "target_date": {
+                                "type": "string",
+                                "description": "New target completion date (ISO format YYYY-MM-DD)"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": ["active", "completed"],
+                                "description": "New status of the goal"
+                            },
+                            "completed": {
+                                "type": "boolean",
+                                "description": "Whether the goal is completed"
+                            },
+                            "progress": {
+                                "type": "integer",
+                                "description": "Goal progress percentage (0 to 100)"
                             }
                         },
                         "required": ["goal_id"]

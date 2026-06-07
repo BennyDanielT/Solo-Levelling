@@ -4,10 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Try MONGODB_URL first (Azure), fall back to DATABASE_URL (local)
-MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
-if not MONGODB_URL:
-    raise ValueError("MONGODB_URL or DATABASE_URL environment variable is not set")
+# Try MONGODB_URL first (Azure), fall back to DATABASE_URL (local), with local default fallback
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL") or "mongodb://admin:solo-leveling-2024@localhost:27017/solo_levelling?authSource=admin"
 
 # Create MongoDB client
 client = AsyncIOMotorClient(MONGODB_URL)

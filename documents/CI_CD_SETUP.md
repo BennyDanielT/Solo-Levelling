@@ -1,4 +1,12 @@
 # CI/CD & Azure Deployment - Quick Start Guide
+## Step 1: Spin up the Azure Infrastructure
+.\scripts\setup-azure.ps1
+
+## Step 2: Push the new passwords and credentials to GitHub
+.\scripts\set-github-secrets.ps1
+
+## Step 3: Trigger the GitHub deployment
+gh workflow run deploy-azure.yml
 
 ## 🎯 Overview
 

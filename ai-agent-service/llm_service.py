@@ -92,6 +92,82 @@ class LLMService:
         else:
             return await self._chat_ollama(messages, system_prompt)
     
+    def _execute_responses_create(self, openai_client, conversation_id: str, input_val: Any, agent_id: str) -> Any:
+        """
+        Executes the responses.create loop to handle any local function tool executions.
+        """
+        from agent_tools import (
+            get_stock_history, 
+            get_user_goals, 
+            create_goal, 
+            delete_goal, 
+            update_goal,
+            get_news_by_category
+        )
+        
+        function_map = {
+            "get_stock_history": get_stock_history,
+            "get_user_goals": get_user_goals,
+            "create_goal": create_goal,
+            "delete_goal": delete_goal,
+            "update_goal": update_goal,
+            "get_news_by_category": get_news_by_category
+        }
+        
+        agent_version = "6"
+        
+        response = openai_client.responses.create(
+            conversation=conversation_id,
+            input=input_val,
+            extra_body={"agent_reference": {"name": agent_id, "version": agent_version, "type": "agent_reference"}},
+        )
+        
+        # Loop to handle function calls
+        while any(item.type == "function_call" for item in response.output):
+            tool_outputs = []
+            for item in response.output:
+                if item.type == "function_call":
+                    func_name = item.name
+                    func_args_str = item.arguments
+                    call_id = item.call_id
+                    
+                    logger.info(f"🔧 [LLM_SERVICE] Agent requested tool call: {func_name} with arguments: {func_args_str}")
+                    
+                    # Load arguments
+                    try:
+                        args = json.loads(func_args_str) if func_args_str else {}
+                    except Exception as e:
+                        logger.error(f"❌ Failed to parse arguments JSON: {e}")
+                        args = {}
+                    
+                    # Execute local function
+                    if func_name in function_map:
+                        try:
+                            # Call function with unpacked arguments
+                            result = function_map[func_name](**args)
+                        except Exception as e:
+                            logger.error(f"💥 Failed executing local function {func_name}: {e}")
+                            result = json.dumps({"success": False, "error": str(e)})
+                    else:
+                        logger.error(f"❌ Unknown function requested by agent: {func_name}")
+                        result = json.dumps({"success": False, "error": f"Function {func_name} not found"})
+                    
+                    logger.info(f"✅ [LLM_SERVICE] Tool execution completed. Result length: {len(result)}")
+                    tool_outputs.append({
+                        "type": "function_call_output",
+                        "call_id": call_id,
+                        "output": result
+                    })
+                    
+            # Send results back
+            response = openai_client.responses.create(
+                conversation=conversation_id,
+                input=tool_outputs,
+                extra_body={"agent_reference": {"name": agent_id, "version": agent_version, "type": "agent_reference"}}
+            )
+            
+        return response
+
     async def _chat_azure(
         self,
         messages: List[Dict[str, str]],
@@ -104,90 +180,52 @@ class LLMService:
             raise Exception("Azure project client not initialized")
         
         try:
-            # Use existing agent (configured in Azure AI Foundry portal)
             agent_id = os.getenv("AZURE_EXISTING_AGENT_ID")
             if not agent_id:
-                raise Exception("AZURE_EXISTING_AGENT_ID not configured. Please create an agent in Azure AI Foundry.")
+                raise Exception("AZURE_EXISTING_AGENT_ID not configured.")
             
             logger.info(f"🤖 Using agent: {agent_id}")
             
-            # Import tool functions from agent_tools
-            from agent_tools import (
-                get_stock_history, 
-                get_user_goals, 
-                create_goal, 
-                delete_goal, 
-                get_news_by_category,
-                set_user_email
-            )
+            from agent_tools import set_user_email
             import nest_asyncio
             nest_asyncio.apply()
             
-            # Set user email in thread context for agent tools to access
+            # Set user email in context for agent tools
             if user_email:
                 set_user_email(user_email)
                 logger.info(f"📧 User email set for agent tools: {user_email}")
             else:
                 logger.warning("⚠️ No user email provided - goal/user functions may fail")
             
-            # Enable auto function calls with all tools from agent_tools
-            logger.info("🔧 Enabling auto function calls with 5 tools...")
-            self.project_client.agents.enable_auto_function_calls(
-                tools={get_stock_history, get_user_goals, create_goal, delete_goal, get_news_by_category},
-                max_retry=5
-            )
+            openai_client = self.project_client.get_openai_client()
             
-            # Create thread
-            thread = self.project_client.agents.threads.create()
-            logger.info(f"📝 Thread: {thread.id}")
+            # Create a temporary conversation for stateless turn
+            conversation = openai_client.conversations.create()
+            logger.info(f"📝 Temporary Conversation Created: {conversation.id}")
             
-            # Add user messages
+            # Combine all messages into a clean format
+            combined_input = ""
             for msg in messages:
-                if msg["role"] == "user":
-                    self.project_client.agents.messages.create(
-                        thread_id=thread.id,
-                        role="user",
-                        content=msg["content"]
-                    )
+                combined_input += f"[{msg['role'].upper()}]\n{msg['content']}\n\n"
             
-            # Run agent
-            logger.info("🏃 Running agent...")
-            run = self.project_client.agents.runs.create_and_process(
-                thread_id=thread.id,
+            # Run the agent response loop
+            response = self._execute_responses_create(
+                openai_client=openai_client,
+                conversation_id=conversation.id,
+                input_val=combined_input,
                 agent_id=agent_id
             )
             
-            logger.info(f"📊 Run status: {run.status}")
-            logger.info(f"   Run ID: {run.id}")
-            
-            # Check for completion or failure
-            if run.status == "failed":
-                error = run.last_error.message if run.last_error else "Unknown error"
-                logger.error(f"❌ Run failed: {error}")
-                raise Exception(f"Agent run failed: {error}")
-            
-            if run.status == "completed":
-                # Get response messages
-                msgs = self.project_client.agents.messages.list(
-                    thread_id=thread.id,
-                    order=ListSortOrder.ASCENDING
-                )
-                
-                # Find assistant response from this run
-                for message in reversed(list(msgs)):
-                    if message.run_id == run.id and message.text_messages:
-                        response = message.text_messages[-1].text.value
-                        logger.info(f"✅ Response: {len(response)} chars")
-                        return response
-                
+            response_text = response.output_text
+            if not response_text:
                 raise Exception("No assistant response found")
-            
-            raise Exception(f"Unexpected run status: {run.status}")
+                
+            return response_text
             
         except Exception as e:
             logger.error(f"❌ Azure AI chat error: {e}")
             raise
-    
+
     async def _chat_ollama(
         self,
         messages: List[Dict[str, str]],
@@ -301,12 +339,12 @@ class LLMService:
         Args:
             message: User message (may include enriched context)
             user_email: User's email for context and tool access
-            thread_id: Optional existing Azure thread ID
+            thread_id: Optional existing Azure conversation ID (acted as thread ID)
         
         Returns:
             {
                 "text": str,           # Assistant response
-                "thread_id": str,      # Azure thread ID for next message
+                "thread_id": str,      # Azure conversation ID for next message
                 "events": List[Dict],  # Function call events
             }
         """
@@ -314,14 +352,7 @@ class LLMService:
             raise Exception("Azure provider not initialized")
         
         try:
-            from agent_tools import (
-                get_stock_history,
-                get_user_goals,
-                create_goal,
-                delete_goal,
-                get_news_by_category,
-                set_user_email
-            )
+            from agent_tools import set_user_email
             import nest_asyncio
             nest_asyncio.apply()
             
@@ -333,65 +364,30 @@ class LLMService:
             if not agent_id:
                 raise Exception("AZURE_EXISTING_AGENT_ID not configured")
             
-            # Enable function calls
-            logger.info("🔧 [AGENT] Enabling auto function calls")
-            self.project_client.agents.enable_auto_function_calls(
-                tools={get_stock_history, get_user_goals, create_goal, delete_goal, get_news_by_category},
-                max_retry=5
-            )
+            openai_client = self.project_client.get_openai_client()
             
-            # Get or create thread
+            # Get or create conversation (mapping thread_id directly to Azure conversation.id)
             if thread_id:
                 azure_thread_id = thread_id
-                logger.info(f"📌 [AGENT] Using existing thread: {azure_thread_id}")
+                logger.info(f"📌 [AGENT] Using existing conversation ID: {azure_thread_id}")
             else:
-                thread = self.project_client.agents.threads.create()
-                azure_thread_id = thread.id
-                logger.info(f"📌 [AGENT] Created new thread: {azure_thread_id}")
+                conversation = openai_client.conversations.create()
+                azure_thread_id = conversation.id
+                logger.info(f"📌 [AGENT] Created new conversation ID: {azure_thread_id}")
             
-            # Add user message
-            self.project_client.agents.messages.create(
-                thread_id=azure_thread_id,
-                role="user",
-                content=message
-            )
-            logger.info(f"✉️ [AGENT] Message added to thread")
-            
-            # Run agent
-            logger.info("🚀 [AGENT] Running agent...")
-            run = self.project_client.agents.runs.create_and_process(
-                thread_id=azure_thread_id,
+            # Run the agent response loop
+            response = self._execute_responses_create(
+                openai_client=openai_client,
+                conversation_id=azure_thread_id,
+                input_val=message,
                 agent_id=agent_id
             )
             
-            logger.info(f"✅ [AGENT] Run completed: {run.status}")
-            
-            # Check for errors
-            if run.status == "failed":
-                error_msg = run.last_error.message if run.last_error else "Unknown error"
-                logger.error(f"❌ [AGENT] Agent run failed: {error_msg}")
-                raise Exception(f"Agent run failed: {error_msg}")
-            
-            if run.status != "completed":
-                raise Exception(f"Unexpected run status: {run.status}")
-            
-            # Get response messages
-            from azure.ai.agents.models import ListSortOrder
-            messages_list = self.project_client.agents.messages.list(
-                thread_id=azure_thread_id,
-                order=ListSortOrder.ASCENDING
-            )
-            
-            # Find most recent assistant response
-            response_text = ""
-            for msg in reversed(list(messages_list)):
-                if msg.run_id == run.id and msg.text_messages:
-                    response_text = msg.text_messages[-1].text.value
-                    logger.info(f"📝 [AGENT] Response: {response_text[:100]}...")
-                    break
-            
+            response_text = response.output_text
             if not response_text:
                 raise Exception("No assistant response found")
+            
+            logger.info(f"📝 [AGENT] Response: {response_text[:100]}...")
             
             return {
                 "text": response_text,

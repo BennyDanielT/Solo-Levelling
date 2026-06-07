@@ -2,18 +2,21 @@
 Script to configure Azure AI Agent with function tools
 Run this to add function calling capabilities to your agent
 """
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from azure.ai.projects import AIProjectClient
 from azure.identity import ClientSecretCredential
 from agent_tools import AgentTools
-from dotenv import load_dotenv
 from loguru import logger
-
-load_dotenv()
 
 
 def configure_agent_functions():
     """Add function tools to the Azure AI agent using update_agent"""
+    import sys
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8")
     
     # Initialize credentials
     tenant_id = os.getenv("AZURE_TENANT_ID")
@@ -54,32 +57,44 @@ def configure_agent_functions():
     
     # Update agent with tools using the correct SDK method
     try:
-        logger.info(f"🤖 Getting current agent configuration...")
+        from azure.ai.projects.models import PromptAgentDefinition, FunctionTool, WebSearchTool
+
+        # Convert definitions from AgentTools to FunctionTool instances
+        converted_tools = []
+        for td in tools:
+            if td["type"] == "function":
+                f = td["function"]
+                ft = FunctionTool(
+                    name=f["name"],
+                    description=f.get("description", ""),
+                    parameters=f.get("parameters", {}),
+                    strict=False
+                )
+                converted_tools.append(ft)
+        converted_tools.append(WebSearchTool())
+
+        logger.info(f"📤 Creating new version for prompt agent '{agent_id}' with {len(converted_tools)} tools...")
         
-        # First, get the existing agent
-        existing_agent = agents_client.get_agent(agent_id)
-        logger.info(f"✅ Found agent: {existing_agent.name}")
-        logger.info(f"   Model: {existing_agent.model}")
-        logger.info(f"   Current tools: {len(existing_agent.tools or [])}")
-        
-        # Update the agent with new tools
-        logger.info(f"📤 Updating agent with {len(tools)} function tools...")
-        
-        updated_agent = agents_client.update_agent(
-            agent_id=agent_id,
-            tools=tools
+        agent_version = project_client.agents.create_version(
+            agent_name=agent_id,
+            definition=PromptAgentDefinition(
+                model="gpt-5.4-nano",
+                instructions="You are a professional life coach helping users track and accomplish their personal and professional goals.",
+                tools=converted_tools,
+            )
         )
         
-        logger.info(f"✅ Agent updated successfully!")
-        logger.info(f"   Agent name: {updated_agent.name}")
-        logger.info(f"   Agent ID: {updated_agent.id}")
-        logger.info(f"   Tools configured: {len(updated_agent.tools or [])}")
+        logger.info(f"✅ Agent version created successfully!")
+        logger.info(f"   Agent Name: {agent_id}")
+        logger.info(f"   Version ID: {agent_version.get('version')}")
+        logger.info(f"   Agent ID: {agent_version.get('id')}")
         
         print("\n" + "="*60)
         print("🎉 SUCCESS! Your agent now has function calling capabilities:")
         print("="*60)
-        for tool in tools:
-            print(f"  ✓ {tool['function']['name']}")
+        for td in tools:
+            print(f"  ✓ {td['function']['name']}")
+        print("  ✓ web_search")
         print("="*60)
         print("\nYour agent can now:")
         print("  • Access user's goals and track progress")
@@ -88,7 +103,7 @@ def configure_agent_functions():
         print("  • View news preferences")
         print("  • Search for stocks")
         print("  • Create new goals")
-        print("\nTry asking: 'What are my current goals?' or 'How's my stock portfolio?'")
+        print(f"\nCreated version {agent_version.get('version')} successfully.")
         
     except Exception as e:
         logger.error(f"❌ Failed to update agent: {e}")
