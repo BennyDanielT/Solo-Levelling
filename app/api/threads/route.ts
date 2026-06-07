@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+// Use FASTAPI_SERVICE_URL (Docker) or FASTAPI_URL (local) for server-side requests
+const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || process.env.FASTAPI_URL || "http://localhost:8000";
 
 export async function GET(request: Request) {
   try {
@@ -28,7 +29,10 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify(data), {
+    // Transform backend response to frontend format
+    // Backend returns: { success: true, data: [...] }
+    // Frontend expects: { threads: [...] }
+    return new Response(JSON.stringify({ threads: data.data || [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -71,7 +75,10 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify(data), {
+    // Transform backend response to frontend format
+    // Backend returns: { thread_id: "...", ... } or { success: true, data: {...} }
+    // Frontend expects thread object directly
+    return new Response(JSON.stringify(data.data || data), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });

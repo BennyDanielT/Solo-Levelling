@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+// Use FASTAPI_SERVICE_URL (Docker) or FASTAPI_URL (local) for server-side requests
+const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || process.env.FASTAPI_URL || "http://localhost:8000";
 
 /**
  * POST /api/chat
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get auth token
+    // Get auth token - use session email as fallback (consistent with threads API)
     const authHeader = req.headers.get("authorization");
     let token = authHeader?.replace("Bearer ", "");
 
@@ -58,11 +59,9 @@ export async function POST(req: Request) {
       token = (session as any).accessToken;
     }
 
+    // Fallback to using email as token (FastAPI accepts this)
     if (!token) {
-      return NextResponse.json(
-        { error: "No authentication token available" },
-        { status: 401 }
-      );
+      token = session.user.email;
     }
 
     console.log(`[CHAT_API] Message from ${session.user.email}: ${message.slice(0, 50)}...`);
@@ -95,15 +94,20 @@ export async function POST(req: Request) {
 
     const data = await response.json();
 
-    // Extract the assistant message
-    const assistantReply = data.data?.reply || data.reply || "";
+    // Extract the assistant message and thread ID
+    const assistantReply = data.reply || "";
+    const responseThreadId = data.thread_id;
 
-    // Return response in AI SDK format
-    // The AI SDK expects a text response that gets streamed
+    // Return response in frontend format
+    // Frontend expects: { messages: [...], thread_id: "..." }
     return NextResponse.json({
-      content: assistantReply,
-      // Optional: Include metadata for AI SDK
-      ...(data.data || data),
+      reply: assistantReply,
+      thread_id: responseThreadId,
+      messages: [
+        { role: "user", content: message },
+        { role: "assistant", content: assistantReply }
+      ],
+      metadata: data.metadata || {}
     });
   } catch (error) {
     console.error("[CHAT_API] Error:", error);

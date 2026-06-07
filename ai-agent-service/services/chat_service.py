@@ -48,13 +48,18 @@ class ChatService:
             
             # Step 1: Get or create user's persistent thread
             if thread_id:
-                # Use provided thread_id
+                # Use provided thread_id (MongoDB thread record ID)
                 thread_record_id = thread_id
                 logger.info(f"📌 [CHAT] Using provided thread: {thread_record_id}")
             else:
                 # Get or create default user thread
                 thread_record_id = await ThreadService.get_or_create_user_thread(user_email)
                 logger.info(f"📌 [CHAT] Using thread: {thread_record_id}")
+            
+            # Get the Azure thread ID from the thread record
+            thread_record = await ThreadService.get_thread_record(thread_record_id)
+            azure_thread_id = thread_record.get("threadId") if thread_record else None
+            logger.info(f"🔗 [CHAT] Azure thread ID: {azure_thread_id}")
             
             # Step 2: Get user context for better responses
             user_context = await ChatService._get_user_context(user_email)
@@ -67,15 +72,19 @@ class ChatService:
             # Step 4: Set user context for agent tools (thread-local storage)
             set_user_email(user_email)
             
-            # Step 5: Call Azure AI Agent
+            # Step 5: Call Azure AI Agent with existing thread ID
             logger.info(f"🤖 [CHAT] Calling Azure agent for: {user_email}")
             response = await llm_service.chat_with_agent(
                 message=enriched_message,
                 user_email=user_email,
-                thread_id=None  # First call, Azure will create thread
+                thread_id=azure_thread_id  # Pass existing Azure thread ID
             )
             
             logger.info(f"✅ [CHAT] Got response from agent")
+            
+            # Store the Azure thread ID in the record if it's new
+            if not azure_thread_id:
+                await ThreadService.set_azure_thread_id(thread_record_id, response.get("thread_id"))
             
             # Step 6: Extract events from response (e.g., "goal_created", "metric_logged")
             events = await ChatService._extract_events(response, user_email)

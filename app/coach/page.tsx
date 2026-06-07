@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
-import CoachInterface from '@/components/coach/CoachInterface';
+import AIAssistantUI from '@/components/AIAssistantUI';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +27,6 @@ export default function CoachPage() {
     );
   }
 
-  return <CoachInterface />;
+  return <AIAssistantUI />;
 }
 

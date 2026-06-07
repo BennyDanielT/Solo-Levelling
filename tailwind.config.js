@@ -1,253 +1,306 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
+  darkMode: ['class', 'class'],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {
-      colors: {
-        // Custom theme colors
-        deep_sky_blue: {
-          50: '#e6f9ff',
-          100: '#ccedff',
-          200: '#99dbff',
-          300: '#66c9ff',
-          400: '#33b7ff',
-          500: '#01befe',
-          600: '#018fcb',
-          700: '#016598',
-          800: '#014366',
-          900: '#002133',
-        },
-        bright_gold: {
-          50: '#fffce6',
-          100: '#fff9cc',
-          200: '#fff399',
-          300: '#ffed66',
-          400: '#ffe733',
-          500: '#ffdd00',
-          600: '#ccb000',
-          700: '#998300',
-          800: '#665600',
-          900: '#332b00',
-        },
-        vivid_tangerine: {
-          50: '#fff2e6',
-          100: '#ffe4cc',
-          200: '#ffc999',
-          300: '#ffae66',
-          400: '#ff9333',
-          500: '#ff7d00',
-          600: '#cc6400',
-          700: '#994b00',
-          800: '#663200',
-          900: '#331900',
-        },
-        neon_pink: {
-          50: '#ffe6f0',
-          100: '#ffccd9',
-          200: '#ff99b3',
-          300: '#ff668d',
-          400: '#ff3367',
-          500: '#ff006d',
-          600: '#cc0056',
-          700: '#990040',
-          800: '#66002b',
-          900: '#330015',
-        },
-        slime_lime: {
-          50: '#f5ffe6',
-          100: '#ebffcc',
-          200: '#d7ff99',
-          300: '#c3ff66',
-          400: '#afff33',
-          500: '#adff02',
-          600: '#8acc02',
-          700: '#679901',
-          800: '#446601',
-          900: '#223300',
-        },
-        violet_ray: {
-          50: '#f2e6ff',
-          100: '#e4ccff',
-          200: '#c999ff',
-          300: '#ae66ff',
-          400: '#9333ff',
-          500: '#8f00ff',
-          600: '#7200cc',
-          700: '#550099',
-          800: '#380066',
-          900: '#1c0033',
-        },
-        // Dark mode colors
-        strawberry_red: {
-          50: '#fee6e7',
-          100: '#fdccd0',
-          200: '#fb99a1',
-          300: '#f96672',
-          400: '#f73343',
-          500: '#f94144',
-          600: '#c73436',
-          700: '#952729',
-          800: '#641a1c',
-          900: '#320d0e',
-        },
-        atomic_tangerine: {
-          50: '#fef2e6',
-          100: '#fde4cc',
-          200: '#fbc999',
-          300: '#f9ae66',
-          400: '#f79333',
-          500: '#f3722c',
-          600: '#c45e24',
-          700: '#95471b',
-          800: '#643012',
-          900: '#331809',
-        },
-        carrot_orange: {
-          50: '#fef5e6',
-          100: '#fdebcc',
-          200: '#fbd799',
-          300: '#f9c366',
-          400: '#f7af33',
-          500: '#f8961e',
-          600: '#c67819',
-          700: '#955a13',
-          800: '#643c0e',
-          900: '#321e07',
-        },
-        tuscan_sun: {
-          50: '#fefce6',
-          100: '#fdf9cc',
-          200: '#fbf399',
-          300: '#f9ed66',
-          400: '#f7e733',
-          500: '#f9c74f',
-          600: '#c7a140',
-          700: '#957c30',
-          800: '#645620',
-          900: '#322b10',
-        },
-        willow_green: {
-          50: '#eff5e9',
-          100: '#dfecd3',
-          200: '#bfd9a7',
-          300: '#9fc67b',
-          400: '#7fb34f',
-          500: '#90be6d',
-          600: '#739857',
-          700: '#567241',
-          800: '#394c2b',
-          900: '#1c2615',
-        },
-        seagrass: {
-          50: '#e6f4f1',
-          100: '#cce9e3',
-          200: '#99d3c7',
-          300: '#66bdab',
-          400: '#33a78f',
-          500: '#43aa8b',
-          600: '#368970',
-          700: '#286755',
-          800: '#1a453a',
-          900: '#0d221d',
-        },
-        blue_slate: {
-          50: '#e9eef2',
-          100: '#d3dde5',
-          200: '#a7bbcb',
-          300: '#7b99b1',
-          400: '#4f7797',
-          500: '#577590',
-          600: '#465e75',
-          700: '#34475a',
-          800: '#23303f',
-          900: '#11181f',
-        },
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-        },
-        dark: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-        },
-        gold: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-        },
-        shadow: {
-          50: '#fdf4ff',
-          100: '#fae8ff',
-          200: '#f5d0fe',
-          300: '#f0abfc',
-          400: '#e879f9',
-          500: '#d946ef',
-          600: '#c026d3',
-          700: '#a21caf',
-          800: '#86198f',
-          900: '#701a75',
-        },
-      },
-      animation: {
-        glow: 'glow 2s ease-in-out infinite alternate',
-        float: 'float 6s ease-in-out infinite',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce-slow': 'bounce 2s infinite',
-        unlock: 'unlock 0.6s ease-out',
-      },
-      keyframes: {
-        glow: {
-          '0%': {
-            boxShadow: '0 0 5px #fbbf24, 0 0 10px #fbbf24, 0 0 15px #fbbf24',
-          },
-          '100%': {
-            boxShadow: '0 0 10px #fbbf24, 0 0 20px #fbbf24, 0 0 30px #fbbf24',
-          },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
-        },
-        unlock: {
-          '0%': { transform: 'scale(0) rotate(0deg)', opacity: '0' },
-          '50%': { transform: 'scale(1.2) rotate(180deg)', opacity: '0.8' },
-          '100%': { transform: 'scale(1) rotate(360deg)', opacity: '1' },
-        },
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
-    },
-  },
-  plugins: [],
+  	extend: {
+  		colors: {
+  			deep_sky_blue: {
+  				'50': '#e6f9ff',
+  				'100': '#ccedff',
+  				'200': '#99dbff',
+  				'300': '#66c9ff',
+  				'400': '#33b7ff',
+  				'500': '#01befe',
+  				'600': '#018fcb',
+  				'700': '#016598',
+  				'800': '#014366',
+  				'900': '#002133'
+  			},
+  			bright_gold: {
+  				'50': '#fffce6',
+  				'100': '#fff9cc',
+  				'200': '#fff399',
+  				'300': '#ffed66',
+  				'400': '#ffe733',
+  				'500': '#ffdd00',
+  				'600': '#ccb000',
+  				'700': '#998300',
+  				'800': '#665600',
+  				'900': '#332b00'
+  			},
+  			vivid_tangerine: {
+  				'50': '#fff2e6',
+  				'100': '#ffe4cc',
+  				'200': '#ffc999',
+  				'300': '#ffae66',
+  				'400': '#ff9333',
+  				'500': '#ff7d00',
+  				'600': '#cc6400',
+  				'700': '#994b00',
+  				'800': '#663200',
+  				'900': '#331900'
+  			},
+  			neon_pink: {
+  				'50': '#ffe6f0',
+  				'100': '#ffccd9',
+  				'200': '#ff99b3',
+  				'300': '#ff668d',
+  				'400': '#ff3367',
+  				'500': '#ff006d',
+  				'600': '#cc0056',
+  				'700': '#990040',
+  				'800': '#66002b',
+  				'900': '#330015'
+  			},
+  			slime_lime: {
+  				'50': '#f5ffe6',
+  				'100': '#ebffcc',
+  				'200': '#d7ff99',
+  				'300': '#c3ff66',
+  				'400': '#afff33',
+  				'500': '#adff02',
+  				'600': '#8acc02',
+  				'700': '#679901',
+  				'800': '#446601',
+  				'900': '#223300'
+  			},
+  			violet_ray: {
+  				'50': '#f2e6ff',
+  				'100': '#e4ccff',
+  				'200': '#c999ff',
+  				'300': '#ae66ff',
+  				'400': '#9333ff',
+  				'500': '#8f00ff',
+  				'600': '#7200cc',
+  				'700': '#550099',
+  				'800': '#380066',
+  				'900': '#1c0033'
+  			},
+  			strawberry_red: {
+  				'50': '#fee6e7',
+  				'100': '#fdccd0',
+  				'200': '#fb99a1',
+  				'300': '#f96672',
+  				'400': '#f73343',
+  				'500': '#f94144',
+  				'600': '#c73436',
+  				'700': '#952729',
+  				'800': '#641a1c',
+  				'900': '#320d0e'
+  			},
+  			atomic_tangerine: {
+  				'50': '#fef2e6',
+  				'100': '#fde4cc',
+  				'200': '#fbc999',
+  				'300': '#f9ae66',
+  				'400': '#f79333',
+  				'500': '#f3722c',
+  				'600': '#c45e24',
+  				'700': '#95471b',
+  				'800': '#643012',
+  				'900': '#331809'
+  			},
+  			carrot_orange: {
+  				'50': '#fef5e6',
+  				'100': '#fdebcc',
+  				'200': '#fbd799',
+  				'300': '#f9c366',
+  				'400': '#f7af33',
+  				'500': '#f8961e',
+  				'600': '#c67819',
+  				'700': '#955a13',
+  				'800': '#643c0e',
+  				'900': '#321e07'
+  			},
+  			tuscan_sun: {
+  				'50': '#fefce6',
+  				'100': '#fdf9cc',
+  				'200': '#fbf399',
+  				'300': '#f9ed66',
+  				'400': '#f7e733',
+  				'500': '#f9c74f',
+  				'600': '#c7a140',
+  				'700': '#957c30',
+  				'800': '#645620',
+  				'900': '#322b10'
+  			},
+  			willow_green: {
+  				'50': '#eff5e9',
+  				'100': '#dfecd3',
+  				'200': '#bfd9a7',
+  				'300': '#9fc67b',
+  				'400': '#7fb34f',
+  				'500': '#90be6d',
+  				'600': '#739857',
+  				'700': '#567241',
+  				'800': '#394c2b',
+  				'900': '#1c2615'
+  			},
+  			seagrass: {
+  				'50': '#e6f4f1',
+  				'100': '#cce9e3',
+  				'200': '#99d3c7',
+  				'300': '#66bdab',
+  				'400': '#33a78f',
+  				'500': '#43aa8b',
+  				'600': '#368970',
+  				'700': '#286755',
+  				'800': '#1a453a',
+  				'900': '#0d221d'
+  			},
+  			blue_slate: {
+  				'50': '#e9eef2',
+  				'100': '#d3dde5',
+  				'200': '#a7bbcb',
+  				'300': '#7b99b1',
+  				'400': '#4f7797',
+  				'500': '#577590',
+  				'600': '#465e75',
+  				'700': '#34475a',
+  				'800': '#23303f',
+  				'900': '#11181f'
+  			},
+  			primary: {
+  				'50': '#f0f9ff',
+  				'100': '#e0f2fe',
+  				'200': '#bae6fd',
+  				'300': '#7dd3fc',
+  				'400': '#38bdf8',
+  				'500': '#0ea5e9',
+  				'600': '#0284c7',
+  				'700': '#0369a1',
+  				'800': '#075985',
+  				'900': '#0c4a6e',
+  				DEFAULT: 'hsl(var(--primary))',
+  				foreground: 'hsl(var(--primary-foreground))'
+  			},
+  			dark: {
+  				'50': '#f8fafc',
+  				'100': '#f1f5f9',
+  				'200': '#e2e8f0',
+  				'300': '#cbd5e1',
+  				'400': '#94a3b8',
+  				'500': '#64748b',
+  				'600': '#475569',
+  				'700': '#334155',
+  				'800': '#1e293b',
+  				'900': '#0f172a'
+  			},
+  			gold: {
+  				'50': '#fffbeb',
+  				'100': '#fef3c7',
+  				'200': '#fde68a',
+  				'300': '#fcd34d',
+  				'400': '#fbbf24',
+  				'500': '#f59e0b',
+  				'600': '#d97706',
+  				'700': '#b45309',
+  				'800': '#92400e',
+  				'900': '#78350f'
+  			},
+  			shadow: {
+  				'50': '#fdf4ff',
+  				'100': '#fae8ff',
+  				'200': '#f5d0fe',
+  				'300': '#f0abfc',
+  				'400': '#e879f9',
+  				'500': '#d946ef',
+  				'600': '#c026d3',
+  				'700': '#a21caf',
+  				'800': '#86198f',
+  				'900': '#701a75'
+  			},
+  			background: 'hsl(var(--background))',
+  			foreground: 'hsl(var(--foreground))',
+  			card: {
+  				DEFAULT: 'hsl(var(--card))',
+  				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			popover: {
+  				DEFAULT: 'hsl(var(--popover))',
+  				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			secondary: {
+  				DEFAULT: 'hsl(var(--secondary))',
+  				foreground: 'hsl(var(--secondary-foreground))'
+  			},
+  			muted: {
+  				DEFAULT: 'hsl(var(--muted))',
+  				foreground: 'hsl(var(--muted-foreground))'
+  			},
+  			accent: {
+  				DEFAULT: 'hsl(var(--accent))',
+  				foreground: 'hsl(var(--accent-foreground))'
+  			},
+  			destructive: {
+  				DEFAULT: 'hsl(var(--destructive))',
+  				foreground: 'hsl(var(--destructive-foreground))'
+  			},
+  			border: 'hsl(var(--border))',
+  			input: 'hsl(var(--input))',
+  			ring: 'hsl(var(--ring))',
+  			chart: {
+  				'1': 'hsl(var(--chart-1))',
+  				'2': 'hsl(var(--chart-2))',
+  				'3': 'hsl(var(--chart-3))',
+  				'4': 'hsl(var(--chart-4))',
+  				'5': 'hsl(var(--chart-5))'
+  			}
+  		},
+  		animation: {
+  			glow: 'glow 2s ease-in-out infinite alternate',
+  			float: 'float 6s ease-in-out infinite',
+  			'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+  			'bounce-slow': 'bounce 2s infinite',
+  			unlock: 'unlock 0.6s ease-out'
+  		},
+  		keyframes: {
+  			glow: {
+  				'0%': {
+  					boxShadow: '0 0 5px #fbbf24, 0 0 10px #fbbf24, 0 0 15px #fbbf24'
+  				},
+  				'100%': {
+  					boxShadow: '0 0 10px #fbbf24, 0 0 20px #fbbf24, 0 0 30px #fbbf24'
+  				}
+  			},
+  			float: {
+  				'0%, 100%': {
+  					transform: 'translateY(0px)'
+  				},
+  				'50%': {
+  					transform: 'translateY(-20px)'
+  				}
+  			},
+  			unlock: {
+  				'0%': {
+  					transform: 'scale(0) rotate(0deg)',
+  					opacity: '0'
+  				},
+  				'50%': {
+  					transform: 'scale(1.2) rotate(180deg)',
+  					opacity: '0.8'
+  				},
+  				'100%': {
+  					transform: 'scale(1) rotate(360deg)',
+  					opacity: '1'
+  				}
+  			}
+  		},
+  		backgroundImage: {
+  			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+  			'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
+  		},
+  		borderRadius: {
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)'
+	}
+	}
+},
+plugins: [],
 };

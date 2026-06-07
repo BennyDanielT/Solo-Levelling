@@ -15,6 +15,26 @@ class ThreadService:
     """Service for managing persistent conversation threads"""
     
     @staticmethod
+    async def get_thread_record(thread_record_id: str) -> Optional[Dict]:
+        """
+        Get a thread record by its MongoDB ID.
+        
+        Args:
+            thread_record_id: MongoDB thread record ID
+            
+        Returns:
+            Thread record dictionary or None if not found
+        """
+        try:
+            thread = await chat_threads_collection.find_one(
+                {"_id": ObjectId(thread_record_id)}
+            )
+            return thread
+        except Exception as e:
+            logger.error(f"❌ Error getting thread record: {e}")
+            return None
+    
+    @staticmethod
     async def get_or_create_user_thread(user_email: str) -> str:
         """
         Get the user's primary conversation thread ID, or create one if it doesn't exist.
@@ -41,8 +61,8 @@ class ThreadService:
             })
             
             if thread:
-                logger.info(f"✅ Found existing thread for {user_email}: {thread['threadId']}")
-                return thread["threadId"]
+                logger.info(f"✅ Found existing thread for {user_email}: {thread['_id']}")
+                return str(thread["_id"])
             
             # Create a new thread (Azure thread will be created on first message)
             new_thread = {

@@ -3,45 +3,96 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
-import { ToastProvider } from '@/components/dashboard/ToastSystem';
+import { ToastProvider, useToast } from '@/components/dashboard/ToastSystem';
 import { FloatingQuickPanel } from '@/components/dashboard/FloatingQuickPanel';
 import AddGoalModal from '@/components/AddGoalModal';
 import SessionProvider from '@/components/SessionProvider';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  const [existingGoals, setExistingGoals] = useState([]);
+  const { addToast } = useToast();
+
+  const handleAddGoal = useCallback(async (title: string, description: string, weight: number, difficulty: string) => {
+    try {
+      const response = await fetch('/api/goals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          weight,
+          priority: difficulty,
+          category: 'personal',
+          status: 'active',
+        }),
+      });
+
+      if (response.ok) {
+        addToast({
+          type: 'success',
+          title: 'Goal Created!',
+          message: `"${title}" has been added to your goals.`,
+        });
+        setIsAddGoalOpen(false);
+        // Trigger a page refresh to show the new goal
+        window.dispatchEvent(new CustomEvent('goalCreated'));
+      } else {
+        const error = await response.json();
+        addToast({
+          type: 'error',
+          title: 'Failed to create goal',
+          message: error.error || 'Please try again.',
+        });
+      }
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to create goal. Please try again.',
+      });
+    }
+  }, [addToast]);
+
+  return (
+    <>
+      <main>{children}</main>
+      <FloatingQuickPanel onAddGoal={() => setIsAddGoalOpen(true)} />
+      <AddGoalModal
+        isOpen={isAddGoalOpen}
+        onClose={() => setIsAddGoalOpen(false)}
+        onAdd={handleAddGoal}
+        existingGoals={existingGoals}
+      />
+    </>
+  );
+}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
-  const [existingGoals, setExistingGoals] = useState([]);
-
-  const handleAddGoal = async (title: string, description: string, weight: number, difficulty: string) => {
-    // This will be called when user submits the modal
-    // You can add your goal creation logic here or pass it to a context
-    console.log('New goal:', { title, description, weight, difficulty });
-    setIsAddGoalOpen(false);
-    // Optionally reload goals or update state
-  };
-
   return (
     <html lang='en' suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+        <meta name="theme-color" content="#8B5CF6" />
+      </head>
       <body className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white'>
         <SessionProvider>
           <ThemeProvider>
             <ToastProvider>
-              <main>{children}</main>
+              <LayoutContent>{children}</LayoutContent>
             </ToastProvider>
-            <FloatingQuickPanel onAddGoal={() => setIsAddGoalOpen(true)} />
-            <AddGoalModal
-              isOpen={isAddGoalOpen}
-              onClose={() => setIsAddGoalOpen(false)}
-              onAdd={handleAddGoal}
-              existingGoals={existingGoals}
-            />
           </ThemeProvider>
         </SessionProvider>
       </body>
