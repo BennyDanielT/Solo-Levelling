@@ -49,15 +49,21 @@ logger.add("logs/app.log", rotation="500 MB", retention="10 days", level="DEBUG"
 app = FastAPI(title="Solo Levelling API")
 
 # CORS middleware
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://dash.maxeffortgazette.com",
+    "https://cloud.maxeffortgazette.com",
+]
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    extra_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+    allowed_origins.extend(extra_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://dash.maxeffortgazette.com",
-        "https://cloud.maxeffortgazette.com",
-        "https://solo-leveling-nextjs.mangorock-6ee33a5b.canadaeast.azurecontainerapps.io"
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex="https://.*\\.azurecontainerapps\\.io",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
