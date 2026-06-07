@@ -353,19 +353,7 @@ def get_news_by_category(category: str, limit: int = 10) -> str:
 
 
 class AgentTools:
-    """Tools for agent to call database functions with fresh connections"""
-    
-    def __init__(self):
-        # Use same env vars as database.py
-        self.mongo_uri = os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
-        if not self.mongo_uri:
-            raise ValueError("MONGODB_URL or DATABASE_URL environment variable is not set")
-        self.db_name = "solo_levelling"
-    
-    def _get_db(self):
-        """Create a fresh database connection for this event loop"""
-        client = AsyncIOMotorClient(self.mongo_uri)
-        return client[self.db_name]
+    """Tools definitions for the Azure AI Agent"""
     
     @staticmethod
     def get_tool_definitions() -> list:
