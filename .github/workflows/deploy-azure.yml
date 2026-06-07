@@ -43,8 +43,8 @@ jobs:
           tags: |
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:${{ github.sha }}
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
-          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-mongodb:latest
-          cache-to: type=inline
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push FastAPI image
         uses: docker/build-push-action@v5
@@ -55,8 +55,8 @@ jobs:
           tags: |
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:${{ github.sha }}
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
-          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-fastapi:latest
-          cache-to: type=inline
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push Next.js image
         uses: docker/build-push-action@v5
@@ -68,8 +68,8 @@ jobs:
           tags: |
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:${{ github.sha }}
             ${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
-          cache-from: type=registry,ref=${{ secrets.AZURE_CONTAINER_REGISTRY }}/solo-leveling-nextjs:latest
-          cache-to: type=inline
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to Azure Container Apps
         uses: azure/CLI@v1
