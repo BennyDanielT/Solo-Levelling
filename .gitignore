@@ -90,3 +90,8 @@ next-env.d.ts
 #documents
 /documents/AZURE_DEPLOYMENT.md
 /documents/Setup-EnvGH.md
+
+
+#Scripts
+/scripts/set-github-secrets.ps1
+/scripts/setup-azure.ps1
