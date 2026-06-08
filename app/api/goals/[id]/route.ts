@@ -10,7 +10,10 @@ async function getAuthToken(session: any) {
   return session?.accessToken || session?.user?.email
 }
 
-export async function GET(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -21,41 +24,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const response = await fetch(`${FASTAPI_URL}/goals`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${await getAuthToken(session)}`,
-      },
-    })
-
-    const data = await response.json()
-    return NextResponse.json(data, { status: response.status })
-
-  } catch (error) {
-    console.error('Get goals proxy error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'User not authenticated' },
-        { status: 401 }
-      )
-    }
-
+    const { id } = params
     const body = await request.json()
 
-    const response = await fetch(`${FASTAPI_URL}/goals`, {
-      method: 'POST',
+    const response = await fetch(`${FASTAPI_URL}/goals/${id}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${await getAuthToken(session)}`,
@@ -66,8 +39,43 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
 
-  } catch (error: any) {
-    console.error('Create goal proxy error', error)
+  } catch (error) {
+    console.error('Update goal proxy error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'User not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = params
+
+    const response = await fetch(`${FASTAPI_URL}/goals/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${await getAuthToken(session)}`,
+      },
+    })
+
+    const data = await response.json()
+    return NextResponse.json(data, { status: response.status })
+
+  } catch (error) {
+    console.error('Delete goal proxy error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

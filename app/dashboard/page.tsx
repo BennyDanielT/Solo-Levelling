@@ -16,7 +16,7 @@ import {
 import { useToast } from '@/components/dashboard/ToastSystem';
 import { ThemeButton } from '@/lib/theme/ThemeButton';
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_URL = '/api';
 
 // Main dashboard content component
 function DashboardContent() {

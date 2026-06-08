@@ -8,7 +8,7 @@ import { Goal } from '@/types';
 import { Plus, Target, Calendar, Tag, Trash2, Edit2, CheckCircle2, Clock } from 'lucide-react';
 import { useToast } from '@/components/dashboard/ToastSystem';
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_URL = '/api';
 
 // Helper to get auth token
 const getAuthToken = (session: any) => {

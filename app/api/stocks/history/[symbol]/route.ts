@@ -14,7 +14,7 @@ export async function GET(
     const period = searchParams.get("period") || "1mo";
 
     // Call FastAPI backend (public endpoint)
-    const backendUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://fastapi:8000";
+    const backendUrl = process.env.FASTAPI_SERVICE_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || "http://fastapi:8000";
     const url = new URL(`${backendUrl}/stocks/history`);
     url.searchParams.set('symbol', symbol);
     url.searchParams.set('period', period);

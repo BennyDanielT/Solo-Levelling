@@ -11,7 +11,7 @@ import {
 } from '@/components/dashboard/DashboardWidgets';
 import { Goal } from '@/types';
 
-const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_URL = '/api';
 
 // Helper to get auth token
 const getAuthToken = (session: any) => {

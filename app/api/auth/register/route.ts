@@ -4,7 +4,7 @@ import crypto from 'crypto'
 
 const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || 'http://localhost:8000'
 const FRONTEND_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder')
 
 export const dynamic = 'force-dynamic'
 
