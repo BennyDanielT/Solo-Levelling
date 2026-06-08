@@ -119,7 +119,7 @@ class LLMService:
             "get_news_by_category": get_news_by_category
         }
         
-        agent_version = "6"
+        agent_version = os.getenv("AZURE_AGENT_VERSION", "7")
         
         response = openai_client.responses.create(
             conversation=conversation_id,

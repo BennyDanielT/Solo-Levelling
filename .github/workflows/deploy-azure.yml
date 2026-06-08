@@ -131,6 +131,7 @@ jobs:
                   LLM_PROVIDER=azure \
                   AZURE_AI_PROJECT_ENDPOINT=${{ secrets.AZURE_AI_PROJECT_ENDPOINT }} \
                   AZURE_EXISTING_AGENT_ID=${{ secrets.AZURE_EXISTING_AGENT_ID }} \
+                  AZURE_AGENT_VERSION=${{ secrets.AZURE_AGENT_VERSION || '7' }} \
                   AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }} \
                   AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }} \
                   AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }} \
@@ -151,6 +152,7 @@ jobs:
                   LLM_PROVIDER=azure \
                   AZURE_AI_PROJECT_ENDPOINT=${{ secrets.AZURE_AI_PROJECT_ENDPOINT }} \
                   AZURE_EXISTING_AGENT_ID=${{ secrets.AZURE_EXISTING_AGENT_ID }} \
+                  AZURE_AGENT_VERSION=${{ secrets.AZURE_AGENT_VERSION || '7' }} \
                   AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }} \
                   AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }} \
                   AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }} \
