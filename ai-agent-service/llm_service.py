@@ -39,6 +39,11 @@ class LLMService:
                 logger.warning("AZURE_AI_PROJECT_ENDPOINT not set")
                 return
             
+            # Clean empty SP env variables so DefaultAzureCredential doesn't fail
+            for key in ["AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET"]:
+                if os.environ.get(key) == "":
+                    del os.environ[key]
+
             # Check for Service Principal credentials
             tenant_id = os.getenv("AZURE_TENANT_ID")
             client_id = os.getenv("AZURE_CLIENT_ID")
