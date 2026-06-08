@@ -41,10 +41,10 @@ export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
           <div className='sticky top-0 z-30 bg-white/95 backdrop-blur-md dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-700/50 shadow-sm'>
             <div className='flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8'>
               <div className='flex items-center gap-3'>
-                <Link href='/dashboard' className='w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300 cursor-pointer'>
+                <Link href='/dashboard' className='w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300 cursor-pointer'>
                   <span className='text-xl'>⚡</span>
                 </Link>
-                <h2 className='hidden sm:block text-lg font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent'>
+                <h2 className='hidden sm:block text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent'>
                   Life Hacker
                 </h2>
               </div>
@@ -54,7 +54,7 @@ export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
                   <div className='relative' ref={dropdownRef}>
                     <button
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className='w-9 h-9 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-300 font-bold text-sm'
+                      className='w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-300 font-bold text-sm'
                     >
                       {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
                     </button>
@@ -115,7 +115,7 @@ export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
                     </button>
                   </div>
                 ) : (
-                  <Link href='/auth/signin' className='px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg text-sm'>
+                  <Link href='/auth/signin' className='px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg text-sm'>
                     Sign In
                   </Link>
                 )}
@@ -135,3 +135,4 @@ export function DashboardLayout({ children, onAddGoal }: DashboardLayoutProps) {
     </div>
   );
 }
+

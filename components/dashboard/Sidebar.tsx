@@ -60,7 +60,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Header */}
         <div className='flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0'>
           {!isCollapsed && (
-            <h1 className='text-xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-500 dark:to-cyan-500 bg-clip-text text-transparent whitespace-nowrap'>
+            <h1 className='text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent whitespace-nowrap'>
               Control Room
             </h1>
           )}
@@ -121,7 +121,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               isCollapsed ? 'justify-center' : 'gap-3'
             }`}
           >
-            <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-500 text-white shadow-lg flex-shrink-0 text-xs font-bold'>
+            <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg flex-shrink-0 text-xs font-bold'>
               {(() => {
                 const { data: session } = useSession();
                 const userName = session?.user?.name || session?.user?.email || 'G';
@@ -159,11 +159,12 @@ export function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <HamburgerMenuIcon className='h-6 w-6' />
         </button>
-        <h1 className='text-lg font-bold text-deep_sky_blue-600 dark:text-deep_sky_blue-400'>
-          Productivity Hub
+        <h1 className='text-lg font-bold text-blue-600 dark:text-blue-400'>
+          Life Hacker
         </h1>
         <div className='w-10' /> {/* Spacer for centering */}
       </div>
     </div>
   );
 }
+

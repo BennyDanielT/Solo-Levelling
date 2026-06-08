@@ -547,3 +547,4 @@ export function HabitsMetrics() {
     </div>
   );
 }
+

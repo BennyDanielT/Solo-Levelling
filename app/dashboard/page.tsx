@@ -381,7 +381,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('overview')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'overview'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -391,7 +391,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('productivity')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'productivity'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -401,7 +401,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('relationships')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'relationships'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -411,7 +411,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('learning')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'learning'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -421,7 +421,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('career')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'career'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -431,7 +431,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('finance')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'finance'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -441,7 +441,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('habits')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'habits'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -451,7 +451,7 @@ function DashboardContent() {
               onClick={() => setActiveSection('news')}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeSection === 'news'
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600/50'
               }`}
             >
@@ -473,11 +473,11 @@ function DashboardContent() {
           <div className='relative z-10'>
             <div className='flex items-center justify-between mb-4'>
               <div className='flex items-center gap-3'>
-                <div className='w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300'>
+                <div className='w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300'>
                   <span className='text-2xl'>📰</span>
                 </div>
                 <div>
-                  <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 dark:from-emerald-400 dark:via-cyan-400 dark:to-blue-400 bg-clip-text text-transparent'>
+                  <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 via-indigo-500 to-blue-600 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-300 bg-clip-text text-transparent'>
                     News Headlines
                   </h1>
                   <p className='text-sm text-gray-500 dark:text-gray-400'>
@@ -579,7 +579,7 @@ function DashboardContent() {
                   </div>
                   <button
                     onClick={() => handleAddStock()}
-                    className='px-6 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200'
+                    className='px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200'
                   >
                     + Add
                   </button>
@@ -734,7 +734,7 @@ function DashboardContent() {
                         onClick={() => isSubscribed ? handleUnsubscribeFromCategory(category) : handleSubscribeToCategory(category)}
                         className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                           isSubscribed
-                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-md hover:shadow-lg'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md hover:shadow-lg'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                       >
@@ -840,7 +840,7 @@ export default function Dashboard() {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800'>
         <div className='text-center'>
-          <div className='w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl animate-pulse'>
+          <div className='w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-xl animate-pulse'>
             <span className='text-3xl'>⚡</span>
           </div>
           <p className='text-gray-600 dark:text-gray-400'>Loading your dashboard...</p>
@@ -855,3 +855,4 @@ export default function Dashboard() {
 
   return <DashboardContent />;
 }
+

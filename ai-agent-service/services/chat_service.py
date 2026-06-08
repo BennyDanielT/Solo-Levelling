@@ -45,7 +45,13 @@ class ChatService:
         """
         try:
             logger.info(f"💬 [CHAT] Processing message from {user_email}")
-            
+
+            # Step 0: Guarantee the user document exists BEFORE the AI runs.
+            # Without this, create_goal's own auto-create could produce a second
+            # user document with a different _id, causing goals to appear under a
+            # different userId than the one the UI queries by.
+            await GoalService._ensure_user_exists(user_email)
+
             # Step 1: Get or create user's persistent thread
             if thread_id:
                 # Use provided thread_id (MongoDB thread record ID)

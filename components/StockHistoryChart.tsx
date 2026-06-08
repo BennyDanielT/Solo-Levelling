@@ -167,3 +167,4 @@ export default function StockHistoryChart({ symbol }: StockHistoryChartProps) {
     </div>
   );
 }
+

@@ -11,54 +11,74 @@ from database import users_collection, goals_collection
 
 class GoalService:
     """Service for goal-related operations"""
-    
+
+    # ---------------------------------------------------------------------------
+    # Internal helpers
+    # ---------------------------------------------------------------------------
+
+    @staticmethod
+    async def _ensure_user_exists(user_email: str):
+        """
+        Return the user document for *user_email*, creating one if it doesn't
+        exist yet.  Using a single helper prevents the race condition where
+        ``get_user_goals`` and ``create_goal`` each auto-create a separate
+        user document for the same email, causing goals to be split across
+        two different ``userId`` values.
+        """
+        user = await users_collection.find_one({"email": user_email})
+        if user:
+            return user
+
+        logger.info(f"🆕 [GoalService] User not found – auto-creating: {user_email}")
+        user_doc = {
+            "name": user_email.split("@")[0],
+            "email": user_email,
+            "username": None,
+            "password": None,
+            "level": 1,
+            "totalPoints": 0,
+            "rank": "E",
+            "title": "Awakened Hunter",
+            "loginPlatform": "google",
+            "emailVerified": True,
+            "joinedAt": datetime.utcnow(),
+            "lastActive": datetime.utcnow(),
+            "preferences": {
+                "theme": "dark",
+                "notifications": True,
+                "language": "en",
+            },
+        }
+        result = await users_collection.insert_one(user_doc)
+        user = await users_collection.find_one({"_id": result.inserted_id})
+        logger.info(f"✅ [GoalService] Auto-created user: {user_email}")
+        return user
+
+    # ---------------------------------------------------------------------------
+    # Public API
+    # ---------------------------------------------------------------------------
+
     @staticmethod
     async def get_user_goals(user_email: str) -> Dict:
         """
-        Get all goals for a user by email
-        
+        Get all goals for a user by email.
+
         Args:
             user_email: User's email address
-            
+
         Returns:
             Dict with success status and goals data
         """
         try:
-            user = await users_collection.find_one({"email": user_email})
-            if not user:
-                # Auto-create user if they don't exist (OAuth users may not have been synced)
-                logger.info(f"🆕 User not found, auto-creating: {user_email}")
-                from datetime import datetime
-                user_doc = {
-                    "name": user_email.split("@")[0],
-                    "email": user_email,
-                    "username": None,
-                    "password": None,
-                    "level": 1,
-                    "totalPoints": 0,
-                    "rank": "E",
-                    "title": "Awakened Hunter",
-                    "loginPlatform": "google",
-                    "emailVerified": True,
-                    "joinedAt": datetime.utcnow(),
-                    "lastActive": datetime.utcnow(),
-                    "preferences": {
-                        "theme": "dark",
-                        "notifications": True,
-                        "language": "en"
-                    }
-                }
-                result = await users_collection.insert_one(user_doc)
-                user = await users_collection.find_one({"_id": result.inserted_id})
-                logger.info(f"✅ Auto-created user: {user_email}")
-            
+            user = await GoalService._ensure_user_exists(user_email)
+
             goals_cursor = goals_collection.find({"userId": str(user["_id"])}).sort("createdAt", -1)
             goals = await goals_cursor.to_list(length=100)
-            
+
             # Convert ObjectId to string
             for goal in goals:
                 goal["id"] = str(goal.pop("_id"))
-            
+
             return {"success": True, "data": goals}
         except Exception as e:
             logger.error(f"Error getting user goals: {e}")
@@ -90,32 +110,9 @@ class GoalService:
             Dict with success status and created goal data
         """
         try:
-            user = await users_collection.find_one({"email": user_email})
-            if not user:
-                # Auto-create user if they don't exist (OAuth users may not have been synced)
-                logger.info(f"🆕 User not found, auto-creating for goal: {user_email}")
-                user_doc = {
-                    "name": user_email.split("@")[0],
-                    "email": user_email,
-                    "username": None,
-                    "password": None,
-                    "level": 1,
-                    "totalPoints": 0,
-                    "rank": "E",
-                    "title": "Awakened Hunter",
-                    "loginPlatform": "google",
-                    "emailVerified": True,
-                    "joinedAt": datetime.utcnow(),
-                    "lastActive": datetime.utcnow(),
-                    "preferences": {
-                        "theme": "dark",
-                        "notifications": True,
-                        "language": "en"
-                    }
-                }
-                result = await users_collection.insert_one(user_doc)
-                user = await users_collection.find_one({"_id": result.inserted_id})
-                logger.info(f"✅ Auto-created user: {user_email}")
+            # Use the shared helper so we never create a second document for
+            # the same email (which would split goals across two userId values).
+            user = await GoalService._ensure_user_exists(user_email)
             
             goal_doc = {
                 "title": title,

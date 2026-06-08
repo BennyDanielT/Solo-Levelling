@@ -164,7 +164,7 @@ function QuickActionModal({ action, onClose }: QuickActionModalProps) {
         
         <button
           onClick={onClose}
-          className='mt-6 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-200'
+          className='mt-6 w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-200'
         >
           Got it
         </button>
@@ -172,3 +172,4 @@ function QuickActionModal({ action, onClose }: QuickActionModalProps) {
     </div>
   );
 }
+

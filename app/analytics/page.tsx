@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
       <div className='space-y-8'>
         {/* Header */}
         <div>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent'>
+          <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent'>
             Analytics Dashboard
           </h1>
           <p className='text-gray-600 dark:text-gray-400 mt-1'>
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
             {Object.entries(analytics.categoryCounts).map(([category, count]) => (
               <div key={category} className='flex items-center justify-between'>
                 <div className='flex items-center gap-3'>
-                  <div className='w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center'>
+                  <div className='w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center'>
                     <span className='text-xl'>{getCategoryIcon(category)}</span>
                   </div>
                   <span className='text-gray-900 dark:text-white font-medium capitalize'>
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
                 <div className='flex items-center gap-4'>
                   <div className='w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden'>
                     <div
-                      className='h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-500'
+                      className='h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500'
                       style={{ 
                         width: `${analytics.totalGoals > 0 ? (count / analytics.totalGoals) * 100 : 0}%` 
                       }}
@@ -418,3 +418,4 @@ function InsightCard({ type, message }: InsightCardProps) {
     </div>
   );
 }
+

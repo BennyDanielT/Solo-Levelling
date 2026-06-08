@@ -91,7 +91,7 @@ function SignInForm() {
     <div className='min-h-screen relative flex items-center justify-center p-4 overflow-hidden'>
       {/* Background matching signup page */}
       <div className='absolute inset-0 w-full h-full'>
-        <div className='absolute inset-0 bg-gradient-to-br from-emerald-900/80 via-cyan-900/80 to-blue-900/80 z-10'></div>
+        <div className='absolute inset-0 bg-gradient-to-br from-blue-900/80 via-indigo-900/80 to-blue-900/80 z-10'></div>
         <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-emerald-900/30 to-cyan-900/30'></div>
       </div>
 
@@ -107,11 +107,11 @@ function SignInForm() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl mb-4'
+              className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4'
             >
               <span className='text-3xl'>⚡</span>
             </motion.div>
-            <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent mb-2'>
+            <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent mb-2'>
               Welcome Back
             </h1>
             <p className='text-gray-600 dark:text-gray-400'>Sign in to Life Hacker</p>
@@ -167,7 +167,7 @@ function SignInForm() {
             </div>
 
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type='submit' disabled={isLoading}
-              className='w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mt-6 shadow-lg'>
+              className='w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mt-6 shadow-lg'>
               {isLoading ? <div className='w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin'></div> : <><LogIn className='w-5 h-5' /><span>Sign In</span></>}
             </motion.button>
           </form>
@@ -195,3 +195,4 @@ export default function SignIn() {
     </Suspense>
   );
 }
+

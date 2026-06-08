@@ -90,7 +90,7 @@ export default function SignUp() {
           animate={{ opacity: 1, scale: 1 }}
           className='max-w-md w-full bg-white dark:bg-gray-800/50 rounded-3xl p-8 shadow-2xl border border-gray-200 dark:border-gray-700/50 text-center'
         >
-          <div className='w-20 h-20 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center'>
+          <div className='w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-6 flex items-center justify-center'>
             <Mail className='w-10 h-10 text-white' />
           </div>
           <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
@@ -101,7 +101,7 @@ export default function SignUp() {
           </p>
           <Link
             href='/auth/signin'
-            className='inline-block px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg'
+            className='inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg'
           >
             Back to Sign In
           </Link>
@@ -114,7 +114,7 @@ export default function SignUp() {
     <div className='min-h-screen relative flex items-center justify-center p-4 overflow-hidden'>
       {/* Background - ready for video */}
       <div className='absolute inset-0 w-full h-full'>
-        <div className='absolute inset-0 bg-gradient-to-br from-emerald-900/80 via-cyan-900/80 to-blue-900/80 z-10'></div>
+        <div className='absolute inset-0 bg-gradient-to-br from-blue-900/80 via-indigo-900/80 to-blue-900/80 z-10'></div>
         <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-emerald-900/30 to-cyan-900/30'></div>
       </div>
 
@@ -130,11 +130,11 @@ export default function SignUp() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl mb-4'
+              className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4'
             >
               <span className='text-3xl'>⚡</span>
             </motion.div>
-            <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent mb-2'>
+            <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent mb-2'>
               Join Life Hacker
             </h1>
             <p className='text-gray-600 dark:text-gray-400'>
@@ -208,7 +208,7 @@ export default function SignUp() {
             </div>
 
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type='submit' disabled={isLoading}
-              className='w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mt-6 shadow-lg'>
+              className='w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mt-6 shadow-lg'>
               {isLoading ? <div className='w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin'></div> : <><UserPlus className='w-5 h-5' /><span>Create Account</span></>}
             </motion.button>
           </form>
@@ -224,3 +224,4 @@ export default function SignUp() {
     </div>
   );
 }
+

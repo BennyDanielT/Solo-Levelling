@@ -390,3 +390,4 @@ export function AddGoalModal({
     </div>
   );
 }
+

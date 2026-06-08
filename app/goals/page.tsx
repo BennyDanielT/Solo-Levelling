@@ -193,7 +193,7 @@ export default function GoalsPage() {
     return (
       <DashboardLayout>
         <div className='flex items-center justify-center min-h-[60vh]'>
-          <div className='w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin'></div>
+          <div className='w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
         </div>
       </DashboardLayout>
     );
@@ -205,7 +205,7 @@ export default function GoalsPage() {
         {/* Header */}
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-3xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent'>
+            <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent'>
               Your Goals
             </h1>
             <p className='text-gray-600 dark:text-gray-400 mt-1'>
@@ -214,7 +214,7 @@ export default function GoalsPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className='inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105'
+            className='inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105'
           >
             <Plus className='w-5 h-5' />
             New Goal
@@ -227,38 +227,38 @@ export default function GoalsPage() {
             title='Total Goals'
             value={goals.length}
             icon='🎯'
-            color='from-blue-500 to-cyan-500'
+            color='from-blue-500 to-indigo-600'
           />
           <StatCard
             title='Active'
             value={goals.filter(g => g.status === 'active').length}
             icon='⚡'
-            color='from-emerald-500 to-teal-500'
+            color='from-yellow-400 to-amber-500'
           />
           <StatCard
             title='Completed'
             value={goals.filter(g => g.status === 'completed').length}
             icon='✅'
-            color='from-purple-500 to-pink-500'
+            color='from-green-500 to-emerald-600'
           />
           <StatCard
             title='Completion Rate'
             value={`${goals.length > 0 ? Math.round((goals.filter(g => g.status === 'completed').length / goals.length) * 100) : 0}%`}
             icon='📊'
-            color='from-orange-500 to-red-500'
+            color='from-blue-400 to-cyan-500'
           />
           <StatCard
             title='Stall Rate'
             value={`${calculateStallRate(goals)}%`}
             icon='⏸️'
-            color='from-red-500 to-rose-500'
+            color='from-red-500 to-rose-600'
             subtitle='No progress in 5+ days'
           />
           <StatCard
             title='Overall Progress'
             value={`${calculateWeightedProgress(goals)}%`}
             icon='📈'
-            color='from-pink-500 to-rose-500'
+            color='from-violet-500 to-purple-600'
           />
         </div>
 
@@ -275,7 +275,7 @@ export default function GoalsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder='Search goals...'
-                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
               />
             </div>
 
@@ -287,7 +287,7 @@ export default function GoalsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
               >
                 <option value='all'>All Status</option>
                 <option value='active'>Active</option>
@@ -303,7 +303,7 @@ export default function GoalsPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+                className='w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
               >
                 <option value='all'>All Categories</option>
                 <option value='productivity'>Productivity</option>
@@ -334,7 +334,7 @@ export default function GoalsPage() {
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className='inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-200 shadow-lg'
+              className='inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-200 shadow-lg'
             >
               <Plus className='w-5 h-5' />
               Create Goal
@@ -708,7 +708,7 @@ function GoalModal({ goal, onClose, onSuccess, session }: GoalModalProps) {
             <button
               type='submit'
               disabled={loading}
-              className='flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {loading ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
             </button>
@@ -718,3 +718,4 @@ function GoalModal({ goal, onClose, onSuccess, session }: GoalModalProps) {
     </div>
   );
 }
+

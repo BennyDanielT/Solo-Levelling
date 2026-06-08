@@ -41,13 +41,13 @@ export default function LandingPage() {
       <div className='relative z-10 flex flex-col items-center justify-center min-h-screen px-4'>
         <div className='text-center max-w-4xl mx-auto'>
           {/* Logo */}
-          <div className='mb-8 inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-3xl shadow-2xl hover:scale-110 transition-transform duration-300'>
+          <div className='mb-8 inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl shadow-2xl hover:scale-110 transition-transform duration-300'>
             <span className='text-5xl'>⚡</span>
           </div>
 
           {/* Hero Text */}
           <h1 className='text-6xl md:text-7xl font-bold mb-6'>
-            <span className='bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 dark:from-emerald-400 dark:via-cyan-400 dark:to-blue-400 bg-clip-text text-transparent'>
+            <span className='bg-gradient-to-r from-emerald-600 via-indigo-500 to-blue-600 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-300 bg-clip-text text-transparent'>
               Life Hacker
             </span>
           </h1>
@@ -59,7 +59,7 @@ export default function LandingPage() {
           <div className='flex flex-col sm:flex-row gap-4 justify-center items-center'>
             <Link
               href='/auth/signup'
-              className='px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-2xl transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-105 text-lg'
+              className='px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-2xl transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-105 text-lg'
             >
               Get Started Free
             </Link>
@@ -93,3 +93,4 @@ export default function LandingPage() {
     </div>
   );
 }
+
