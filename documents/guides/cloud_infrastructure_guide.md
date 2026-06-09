@@ -12,10 +12,10 @@ graph LR
         DNS["cloud.maxeffortgazette.com"]
     end
 
-    subgraph Azure_ACA_Env ["Azure Container App Environment (Managed VNet)"]
-        NextJS["solo-leveling-nextjs (External Ingress: 3000)"]
-        FastAPI["solo-leveling-fastapi (External Ingress: 8000)"]
-        MongoDB["solo-leveling-mongodb (Internal Ingress: 27017)"]
+    subgraph Azure_ACA_Env ["Azure Container App Environment - Managed VNet"]
+        NextJS["solo-leveling-nextjs - External Ingress 3000"]
+        FastAPI["solo-leveling-fastapi - External Ingress 8000"]
+        MongoDB["solo-leveling-mongodb - Internal Ingress 27017"]
     end
 
     subgraph Azure_Services ["Azure Resources"]
