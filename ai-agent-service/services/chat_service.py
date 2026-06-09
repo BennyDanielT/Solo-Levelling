@@ -8,7 +8,8 @@ from loguru import logger
 import json
 import asyncio
 
-from database import users_collection
+from database import users_collection, chat_threads_collection
+from bson import ObjectId
 from llm_service import llm_service
 from goal_service import GoalService
 from services.thread_service import ThreadService
@@ -91,6 +92,29 @@ class ChatService:
             # Store the Azure thread ID in the record if it's new
             if not azure_thread_id:
                 await ThreadService.set_azure_thread_id(thread_record_id, response.get("thread_id"))
+
+            # Save user and assistant messages to database thread record
+            try:
+                user_msg = {
+                    "role": "user",
+                    "content": message,
+                    "timestamp": datetime.utcnow()
+                }
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": response.get("text", ""),
+                    "timestamp": datetime.utcnow()
+                }
+                await chat_threads_collection.update_one(
+                    {"_id": ObjectId(thread_record_id)},
+                    {
+                        "$push": {"messages": {"$each": [user_msg, assistant_msg]}},
+                        "$set": {"updated_at": datetime.utcnow()}
+                    }
+                )
+                logger.info(f"💾 Saved chat history to MongoDB thread record: {thread_record_id}")
+            except Exception as db_err:
+                logger.error(f"❌ Failed to save chat history to MongoDB: {db_err}")
             
             # Step 6: Extract events from response (e.g., "goal_created", "metric_logged")
             events = await ChatService._extract_events(response, user_email)

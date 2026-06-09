@@ -108,7 +108,15 @@ export default function AIAssistantUI() {
         const data = await response.json()
         // Add assistant reply to messages
         if (data.reply) {
-          setMessages(prev => [...prev, { role: "assistant", content: data.reply }])
+          const assistantMessage = { role: "assistant", content: data.reply }
+          setMessages(prev => [...prev, assistantMessage])
+          setConversations(prevConvs =>
+            prevConvs.map(c =>
+              c._id === currentConversation._id
+                ? { ...c, messages: [...(c.messages || []), userMessage, assistantMessage] }
+                : c
+            )
+          )
         }
       } else {
         // Remove optimistic message on error
