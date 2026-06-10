@@ -1,6 +1,9 @@
 @description('The location where resources will be deployed.')
 param location string = resourceGroup().location
 
+@description('The location where the Elasticsearch monitor will be deployed. Must be a supported region.')
+param elasticLocation string = 'canadacentral'
+
 @description('The name of the Azure Container Apps Environment.')
 param containerAppEnvName string = 'solo-leveling-env'
 
@@ -46,7 +49,7 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
 // 3. Azure Native Elastic Integration (Managed Elasticsearch & Kibana)
 resource elasticMonitor 'Microsoft.Elastic/monitors@2024-03-01' = {
   name: elasticMonitorName
-  location: location
+  location: elasticLocation
   sku: {
     name: 'ess-monthly-consumption_Monthly' // Native consumption tier
   }
@@ -95,6 +98,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // Output critical connection endpoints
-output elasticsearchEndpoint string = elasticMonitor.properties.elasticsearchSchema.elasticsearchUrl
-output kibanaEndpoint string = elasticMonitor.properties.elasticsearchSchema.kibanaUrl
+output elasticsearchEndpoint string = elasticMonitor.properties.elasticProperties.elasticCloudDeployment.elasticsearchServiceUrl
+output kibanaEndpoint string = elasticMonitor.properties.elasticProperties.elasticCloudDeployment.kibanaServiceUrl
 output keyVaultUri string = keyVault.properties.vaultUri
