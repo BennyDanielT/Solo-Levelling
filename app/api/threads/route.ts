@@ -1,62 +1,118 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { logger, getPrivacySafeUserId } from "@/lib/logger"
+import crypto from "crypto"
 
-// Use FASTAPI_SERVICE_URL (Docker) or FASTAPI_URL (local) for server-side requests
-const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || process.env.FASTAPI_URL || "http://localhost:8000";
+export const dynamic = "force-dynamic"
 
-export async function GET(request: Request) {
+const FASTAPI_URL = process.env.FASTAPI_SERVICE_URL || process.env.FASTAPI_URL || "http://localhost:8000"
+
+export async function GET(request: NextRequest) {
+  const requestId = crypto.randomUUID()
+  const startTime = Date.now()
+  const session = await getServerSession(authOptions)
+  const userId = getPrivacySafeUserId(session?.user?.email)
+  const route = "/api/threads"
+
+  logger.info(`GET ${route} - Fetching chat threads`, {
+    route,
+    method: "GET",
+    request_id: requestId,
+    user_id: userId,
+  })
+
   try {
-    const session = await getServerSession(authOptions);
-
     if (!session?.user?.email) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      const latency = Date.now() - startTime
+      logger.warn(`GET ${route} - User not authenticated`, {
+        route,
+        method: "GET",
+        request_id: requestId,
+        user_id: userId,
         status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+        latency_ms: latency,
+      })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const response = await fetch(`${FASTAPI_URL}/threads`, {
       headers: {
         Authorization: `Bearer ${session.user.email}`,
       },
-    });
+    })
+
+    const latency = Date.now() - startTime
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Failed to fetch threads" }), {
+      logger.warn(`GET ${route} - Backend returned error`, {
+        route,
+        method: "GET",
+        request_id: requestId,
+        user_id: userId,
         status: response.status,
-        headers: { "Content-Type": "application/json" },
-      });
+        latency_ms: latency,
+      })
+      return NextResponse.json({ error: "Failed to fetch threads" }, { status: response.status })
     }
 
-    const data = await response.json();
-    // Transform backend response to frontend format
-    // Backend returns: { success: true, data: [...] }
-    // Frontend expects: { threads: [...] }
-    return new Response(JSON.stringify({ threads: data.data || [] }), {
+    const data = await response.json()
+    logger.info(`GET ${route} - Request succeeded`, {
+      route,
+      method: "GET",
+      request_id: requestId,
+      user_id: userId,
       status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Error fetching threads:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      latency_ms: latency,
+    })
+
+    return NextResponse.json({ threads: data.data || [] }, { status: 200 })
+
+  } catch (error: any) {
+    const latency = Date.now() - startTime
+    logger.error(`GET ${route} - Proxy error`, {
+      route,
+      method: "GET",
+      request_id: requestId,
+      user_id: userId,
       status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+      latency_ms: latency,
+      error_type: error?.name || "Error",
+      error_message: error?.message || String(error),
+    })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
+export async function POST(request: NextRequest) {
+  const requestId = crypto.randomUUID()
+  const startTime = Date.now()
+  const session = await getServerSession(authOptions)
+  const userId = getPrivacySafeUserId(session?.user?.email)
+  const route = "/api/threads"
 
+  logger.info(`POST ${route} - Creating chat thread`, {
+    route,
+    method: "POST",
+    request_id: requestId,
+    user_id: userId,
+  })
+
+  try {
     if (!session?.user?.email) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      const latency = Date.now() - startTime
+      logger.warn(`POST ${route} - User not authenticated`, {
+        route,
+        method: "POST",
+        request_id: requestId,
+        user_id: userId,
         status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+        latency_ms: latency,
+      })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json();
+    const body = await request.json()
 
     const response = await fetch(`${FASTAPI_URL}/threads`, {
       method: "POST",
@@ -65,29 +121,47 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${session.user.email}`,
       },
       body: JSON.stringify(body),
-    });
+    })
+
+    const latency = Date.now() - startTime
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Failed to create thread" }), {
+      logger.warn(`POST ${route} - Backend returned error`, {
+        route,
+        method: "POST",
+        request_id: requestId,
+        user_id: userId,
         status: response.status,
-        headers: { "Content-Type": "application/json" },
-      });
+        latency_ms: latency,
+      })
+      return NextResponse.json({ error: "Failed to create thread" }, { status: response.status })
     }
 
-    const data = await response.json();
-    // Transform backend response to frontend format
-    // Backend returns: { thread_id: "...", ... } or { success: true, data: {...} }
-    // Frontend expects thread object directly
-    return new Response(JSON.stringify(data.data || data), {
+    const data = await response.json()
+    logger.info(`POST ${route} - Request succeeded`, {
+      route,
+      method: "POST",
+      request_id: requestId,
+      user_id: userId,
       status: 201,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Error creating thread:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      latency_ms: latency,
+    })
+
+    return NextResponse.json(data.data || data, { status: 201 })
+
+  } catch (error: any) {
+    const latency = Date.now() - startTime
+    logger.error(`POST ${route} - Proxy error`, {
+      route,
+      method: "POST",
+      request_id: requestId,
+      user_id: userId,
       status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+      latency_ms: latency,
+      error_type: error?.name || "Error",
+      error_message: error?.message || String(error),
+    })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 

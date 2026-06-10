@@ -1,55 +1,94 @@
-/**
- * GET /api/stocks/history/[symbol]?period=1mo
- * 
- * Proxy route that fetches stock history from FastAPI backend
- * Protected route - requires authentication
- */
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { logger, getPrivacySafeUserId } from '@/lib/logger'
+import crypto from 'crypto'
+
+export const dynamic = 'force-dynamic'
+
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { symbol: string } }
 ) {
-  try {
-    const { symbol } = params;
-    const { searchParams } = new URL(request.url);
-    const period = searchParams.get("period") || "1mo";
+  const requestId = crypto.randomUUID()
+  const startTime = Date.now()
+  const session = await getServerSession(authOptions)
+  const userId = getPrivacySafeUserId(session?.user?.email)
+  const { symbol } = params
+  const { searchParams } = new URL(request.url)
+  const period = searchParams.get("period") || "1mo"
+  const route = `/api/stocks/history/${symbol}`
 
-    // Call FastAPI backend (public endpoint)
-    const backendUrl = process.env.FASTAPI_SERVICE_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || "http://fastapi:8000";
-    const url = new URL(`${backendUrl}/stocks/history`);
-    url.searchParams.set('symbol', symbol);
-    url.searchParams.set('period', period);
+  logger.info(`GET ${route} - Fetching stock history`, {
+    route,
+    method: 'GET',
+    request_id: requestId,
+    user_id: userId,
+    symbol,
+    period,
+  })
+
+  try {
+    const backendUrl = process.env.FASTAPI_SERVICE_URL || process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
+    const url = new URL(`${backendUrl}/stocks/history`)
+    url.searchParams.set('symbol', symbol)
+    url.searchParams.set('period', period)
 
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-    });
+    })
+
+    const latency = Date.now() - startTime
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return new Response(JSON.stringify(errorData), {
+      logger.warn(`GET ${route} - Backend returned error`, {
+        route,
+        method: 'GET',
+        request_id: requestId,
+        user_id: userId,
         status: response.status,
-        headers: { "Content-Type": "application/json" },
-      });
+        latency_ms: latency,
+        symbol,
+        period,
+      })
+      return NextResponse.json(errorData, { status: response.status })
     }
 
-    const data = await response.json();
-    return new Response(JSON.stringify(data), {
+    const data = await response.json()
+    logger.info(`GET ${route} - Request succeeded`, {
+      route,
+      method: 'GET',
+      request_id: requestId,
+      user_id: userId,
       status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Stock history error:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Failed to fetch stock history",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+      latency_ms: latency,
+      symbol,
+      period,
+    })
+
+    return NextResponse.json(data, { status: 200 })
+
+  } catch (error: any) {
+    const latency = Date.now() - startTime
+    logger.error(`GET ${route} - Proxy error`, {
+      route,
+      method: 'GET',
+      request_id: requestId,
+      user_id: userId,
+      status: 500,
+      latency_ms: latency,
+      symbol,
+      period,
+      error_type: error?.name || 'Error',
+      error_message: error?.message || String(error),
+    })
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch stock history' },
+      { status: 500 }
+    )
   }
 }
