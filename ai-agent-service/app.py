@@ -35,16 +35,9 @@ from api import chat_router, goals_router, user_router
 
 load_dotenv()
 
-# Configure loguru
-logger.remove()  # Remove default handler
-logger.add(
-    sys.stderr,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    level="DEBUG",  # Change this: DEBUG (most verbose) | INFO | SUCCESS | WARNING | ERROR | CRITICAL
-    colorize=True
-)
-# Optional: Add file logging
-logger.add("logs/app.log", rotation="500 MB", retention="10 days", level="DEBUG")
+# Configure loguru & observability
+from observability import setup_observability, ObservabilityMiddleware
+setup_observability()
 
 app = FastAPI(title="Solo Levelling API")
 
@@ -68,6 +61,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(ObservabilityMiddleware)
 
 # Include routers for clean architecture
 app.include_router(chat_router)

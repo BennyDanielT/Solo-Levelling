@@ -136,13 +136,13 @@ class LLMService:
                     func_args_str = item.arguments
                     call_id = item.call_id
                     
-                    logger.info(f"🔧 [LLM_SERVICE] Agent requested tool call: {func_name} with arguments: {func_args_str}")
+                    logger.bind(tool_name=func_name).info(f"🔧 [LLM_SERVICE] Agent requested tool call: {func_name}")
                     
                     # Load arguments
                     try:
                         args = json.loads(func_args_str) if func_args_str else {}
                     except Exception as e:
-                        logger.error(f"❌ Failed to parse arguments JSON: {e}")
+                        logger.bind(tool_name=func_name, error_type=e.__class__.__name__, error_message=str(e)).error(f"❌ Failed to parse arguments JSON: {e}")
                         args = {}
                     
                     # Execute local function
@@ -151,13 +151,13 @@ class LLMService:
                             # Call function with unpacked arguments
                             result = function_map[func_name](**args)
                         except Exception as e:
-                            logger.error(f"💥 Failed executing local function {func_name}: {e}")
+                            logger.bind(tool_name=func_name, error_type=e.__class__.__name__, error_message=str(e)).error(f"💥 Failed executing local function {func_name}: {e}")
                             result = json.dumps({"success": False, "error": str(e)})
                     else:
-                        logger.error(f"❌ Unknown function requested by agent: {func_name}")
+                        logger.bind(tool_name=func_name, error_type="NotFoundError", error_message=f"Function {func_name} not found").error(f"❌ Unknown function requested by agent: {func_name}")
                         result = json.dumps({"success": False, "error": f"Function {func_name} not found"})
                     
-                    logger.info(f"✅ [LLM_SERVICE] Tool execution completed. Result length: {len(result)}")
+                    logger.bind(tool_name=func_name).info(f"✅ [LLM_SERVICE] Tool execution completed. Result length: {len(result)}")
                     tool_outputs.append({
                         "type": "function_call_output",
                         "call_id": call_id,
@@ -381,18 +381,24 @@ class LLMService:
                 logger.info(f"📌 [AGENT] Created new conversation ID: {azure_thread_id}")
             
             # Run the agent response loop
+            start_time = time.time()
             response = self._execute_responses_create(
                 openai_client=openai_client,
                 conversation_id=azure_thread_id,
                 input_val=message,
                 agent_id=agent_id
             )
+            latency_ms = round((time.time() - start_time) * 1000, 2)
             
             response_text = response.output_text
             if not response_text:
                 raise Exception("No assistant response found")
             
-            logger.info(f"📝 [AGENT] Response: {response_text[:100]}...")
+            logger.bind(
+                agent_name=agent_id,
+                model_name=os.getenv("AZURE_OPENAI_MODEL_NAME", "gpt-4o"),
+                latency_ms=latency_ms
+            ).info(f"🤖 [AGENT] Response generated in {latency_ms}ms: {response_text[:100]}...")
             
             return {
                 "text": response_text,

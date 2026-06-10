@@ -81,7 +81,7 @@ class GoalService:
 
             return {"success": True, "data": goals}
         except Exception as e:
-            logger.error(f"Error getting user goals: {e}")
+            logger.bind(mongodb_failure=True, error_type=e.__class__.__name__, error_message=str(e)).error(f"Error getting user goals: {e}")
             return {"success": False, "error": str(e)}
     
     @staticmethod
@@ -140,7 +140,7 @@ class GoalService:
                 "data": goal_doc
             }
         except Exception as e:
-            logger.error(f"Error creating goal: {e}")
+            logger.bind(mongodb_failure=True, error_type=e.__class__.__name__, error_message=str(e)).error(f"Error creating goal: {e}")
             return {"success": False, "error": str(e)}
     
     @staticmethod
@@ -206,7 +206,7 @@ class GoalService:
             
             return {"success": True, "message": "Goal updated successfully"}
         except Exception as e:
-            logger.error(f"Error updating goal: {e}")
+            logger.bind(mongodb_failure=True, error_type=e.__class__.__name__, error_message=str(e)).error(f"Error updating goal: {e}")
             return {"success": False, "error": str(e)}
     
     @staticmethod
@@ -236,5 +236,5 @@ class GoalService:
             
             return {"success": True, "message": "Goal deleted successfully"}
         except Exception as e:
-            logger.error(f"Error deleting goal: {e}")
+            logger.bind(mongodb_failure=True, error_type=e.__class__.__name__, error_message=str(e)).error(f"Error deleting goal: {e}")
             return {"success": False, "error": str(e)}
