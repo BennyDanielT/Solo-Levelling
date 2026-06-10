@@ -56,6 +56,9 @@ resource elasticMonitor 'Microsoft.Elastic/monitors@2024-03-01' = {
   properties: {
     userInfo: {
       emailAddress: adminEmail
+      firstName: 'Benny'
+      lastName: 'Daniel'
+      companyName: 'SoloLeveling'
     }
   }
 }
